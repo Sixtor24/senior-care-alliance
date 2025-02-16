@@ -12,6 +12,10 @@ module.exports = {
         'blue-background': '#0E67C7', 
         'text-blue': '#ABD3FF',
         'dark-blue': '#0E67C7', 
+        'gray-color': '#D8DEE6',
+        'text-gray': '#878B99',
+        'light-gray': '#D9D9D9',
+        'black': '#101423',
       },
       spacing: {
         'custom-padding-horizontal': '15.1px', 
