@@ -37,7 +37,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({ formData, onBack, onNext })
                 {/* Campo de Contraseña */}
                 <View className="relative mb-4">
                     <TextInput
-                    className={`border py-3 px-5 rounded-lg text-black w-full text-base pr-10 ${
+                    className={`border py-2 px-5 rounded-lg text-black w-full text-base pr-10 ${
                         strength === 0 && password.length > 0 ? "border-red-500" : "border-gray-color"
                     }`}
                     secureTextEntry={!showPassword}
@@ -98,7 +98,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({ formData, onBack, onNext })
                 {/* Confirmar contraseña */}
                 <View className="relative mt-4">
                     <TextInput
-                    className="border py-3 px-5 text-black rounded-lg w-full text-base pr-10 border-gray-color"
+                    className="border py-2 px-5 text-black rounded-lg w-full text-base pr-10 border-gray-color"
                     secureTextEntry={!showSecondPassword}
                     placeholder="Confirm Password"
                     value={confirmPassword}

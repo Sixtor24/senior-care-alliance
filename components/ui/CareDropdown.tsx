@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import DropDownPicker from "react-native-dropdown-picker";
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 
 // Definición de tipos
 interface DropdownItem {
@@ -11,33 +11,33 @@ interface DropdownItem {
 interface CareDropdownProps {
     placeholder: string;
     items: DropdownItem[];
-    onSelect: (value: string | null) => void; 
-    error?: boolean; 
+    onSelect: (value: string | null) => void;
+    error?: boolean; // Prop para indicar si hay un error
 }
 
 const CareDropdown: React.FC<CareDropdownProps> = ({
     placeholder,
     items,
     onSelect,
-    error = false, 
+    error = false, // Valor predeterminado: sin error
 }) => {
     const [open, setOpen] = useState(false);
-    const [selectedRole, setSelectedRole] = useState<string | null>(null); 
+    const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
     return (
         <>
             {/* Dropdown */}
             <DropDownPicker
                 open={open}
-                value={selectedRole} 
+                value={selectedRole}
                 items={items}
                 setOpen={setOpen}
-                setValue={setSelectedRole} 
+                setValue={setSelectedRole}
                 placeholder={placeholder}
-                dropDownDirection="BOTTOM" 
+                dropDownDirection="BOTTOM"
                 listMode="SCROLLVIEW"
                 style={{
-                    borderColor: error ? "#FF0000" : "#D1D5DB", 
+                    borderColor: error ? "#FF0000" : "#D1D5DB", // Cambia el color del borde si hay un error
                     borderWidth: 1,
                     height: 45,
                     minHeight: 40,
@@ -60,11 +60,11 @@ const CareDropdown: React.FC<CareDropdownProps> = ({
                     backgroundColor: "#FFFFFF",
                 }}
                 onChangeValue={(selectedValue) => {
-                    setSelectedRole(selectedValue); 
-                    onSelect(selectedValue); 
+                    setSelectedRole(selectedValue);
+                    onSelect(selectedValue); // Notificar la selección al componente padre
                 }}
                 placeholderStyle={{
-                    color: error ? "#FF0000" : "#000", 
+                    color: error ? "#FF0000" : "#000", // Cambia el color del texto del placeholder si hay un error
                     fontSize: 14,
                 }}
             />
