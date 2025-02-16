@@ -11,14 +11,14 @@ interface CareDropdownProps {
     placeholder: string;
     items: DropdownItem[];
     onSelect: (value: string | null) => void;
-    error?: boolean; 
+    error?: boolean;
 }
 
 const CareDropdown: React.FC<CareDropdownProps> = ({
     placeholder,
     items,
     onSelect,
-    error = false, 
+    error = false,
 }) => {
     const [open, setOpen] = useState(false);
     const [selectedRole, setSelectedRole] = useState<string | null>(null);
@@ -36,7 +36,7 @@ const CareDropdown: React.FC<CareDropdownProps> = ({
                 dropDownDirection="BOTTOM"
                 listMode="SCROLLVIEW"
                 style={{
-                    borderColor: error ? "#FF0000" : "#D1D5DB", 
+                    borderColor: error ? "#FF0000" : "#D1D5DB",
                     borderWidth: 1,
                     height: 45,
                     minHeight: 40,
@@ -63,7 +63,7 @@ const CareDropdown: React.FC<CareDropdownProps> = ({
                     onSelect(selectedValue);
                 }}
                 placeholderStyle={{
-                    color: error ? "#FF0000" : "#000", 
+                    color: error ? "#FF0000" : "#000",
                     fontSize: 14,
                 }}
             />

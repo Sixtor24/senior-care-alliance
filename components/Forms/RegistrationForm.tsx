@@ -118,7 +118,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onNext, formData })
 
           {/* Role */}
           <CareDropdown
-            placeholder={errors.role ? "Select Role*" : "Select Role"}
+            placeholder={errors.role ? "Role*" : "Role"}
             items={roles}
             onSelect={(selectedValue) => {
               setRole(selectedValue ?? "");
