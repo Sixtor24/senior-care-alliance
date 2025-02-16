@@ -18,53 +18,51 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ onStepChange }) => {
         role: "",
         organizationName: "",
         password: "",
-        organizationType: "", // Agregado para QuestionsForm
-        dataUsage: "",         // Agregado para QuestionsForm
-        decisions: "",         // Agregado para QuestionsForm
+        organizationType: "", 
+        dataUsage: "",         
+        decisions: "",         
     });
 
-    // Estado compartido para la animación de opacidad
+    
     const opacity = useSharedValue(0);
 
-    // Función para animar la entrada
+   
     const fadeIn = () => {
         opacity.value = withTiming(1, { duration: 300 });
     };
 
-    // Función para animar la salida
+    
     const fadeOut = () => {
         opacity.value = withTiming(0, { duration: 300 });
     };
 
     const handleNextStep = (data: any) => {
-        fadeOut(); // Animar la salida del paso actual
+        fadeOut(); 
         setTimeout(() => {
             setFormData((prevData) => ({ ...prevData, ...data }));
             const newStep = step + 1;
             setStep(newStep);
-            onStepChange(newStep); // Notificar el cambio de paso al componente padre
-            fadeIn(); // Animar la entrada del nuevo paso
-        }, 300); // Esperar a que termine la animación de salida
+            onStepChange(newStep); 
+            fadeIn(); 
+        }, 300); 
     };
 
     const handlePreviousStep = () => {
-        fadeOut(); // Animar la salida del paso actual
+        fadeOut(); 
         setTimeout(() => {
             const newStep = step - 1;
             setStep(newStep);
-            onStepChange(newStep); // Notificar el cambio de paso al componente padre
-            fadeIn(); // Animar la entrada del nuevo paso
-        }, 300); // Esperar a que termine la animación de salida
+            onStepChange(newStep); 
+            fadeIn(); 
+        }, 300); 
     };
 
-    // Estilo animado para la opacidad
     const animatedStyle = useAnimatedStyle(() => {
         return {
             opacity: opacity.value,
         };
     });
 
-    // Iniciar la animación al montar el componente
     React.useEffect(() => {
         fadeIn();
     }, []);

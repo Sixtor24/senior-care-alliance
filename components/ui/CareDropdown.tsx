@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import DropDownPicker from "react-native-dropdown-picker";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 
-// Definición de tipos
 interface DropdownItem {
     label: string;
     value: string;
@@ -12,14 +11,14 @@ interface CareDropdownProps {
     placeholder: string;
     items: DropdownItem[];
     onSelect: (value: string | null) => void;
-    error?: boolean; // Prop para indicar si hay un error
+    error?: boolean; 
 }
 
 const CareDropdown: React.FC<CareDropdownProps> = ({
     placeholder,
     items,
     onSelect,
-    error = false, // Valor predeterminado: sin error
+    error = false, 
 }) => {
     const [open, setOpen] = useState(false);
     const [selectedRole, setSelectedRole] = useState<string | null>(null);
@@ -37,7 +36,7 @@ const CareDropdown: React.FC<CareDropdownProps> = ({
                 dropDownDirection="BOTTOM"
                 listMode="SCROLLVIEW"
                 style={{
-                    borderColor: error ? "#FF0000" : "#D1D5DB", // Cambia el color del borde si hay un error
+                    borderColor: error ? "#FF0000" : "#D1D5DB", 
                     borderWidth: 1,
                     height: 45,
                     minHeight: 40,
@@ -61,10 +60,10 @@ const CareDropdown: React.FC<CareDropdownProps> = ({
                 }}
                 onChangeValue={(selectedValue) => {
                     setSelectedRole(selectedValue);
-                    onSelect(selectedValue); // Notificar la selección al componente padre
+                    onSelect(selectedValue);
                 }}
                 placeholderStyle={{
-                    color: error ? "#FF0000" : "#000", // Cambia el color del texto del placeholder si hay un error
+                    color: error ? "#FF0000" : "#000", 
                     fontSize: 14,
                 }}
             />

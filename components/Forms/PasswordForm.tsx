@@ -4,7 +4,7 @@ import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import ImagesPath from "@/assets/ImagesPath";
 
 interface PasswordFormProps {
-    formData: any; // Define un tipo más específico si es necesario
+    formData: any; 
     onBack: () => void;
     onNext: (data: { password: string }) => void;
 }
@@ -53,7 +53,6 @@ const PasswordForm: React.FC<PasswordFormProps> = ({ formData, onBack, onNext })
                     </TouchableOpacity>
                 </View>
 
-                {/* Barra de Seguridad */}
                 <View className="flex-row w-full rounded-full mb-2 gap-3 overflow-hidden">
                     <View
                         className={`h-1 flex-1 ${strength >= 1 ? "bg-red-500" : "bg-light-gray"
@@ -69,7 +68,6 @@ const PasswordForm: React.FC<PasswordFormProps> = ({ formData, onBack, onNext })
                     />
                 </View>
 
-                {/* Reglas de seguridad */}
                 <Text className="text-text-gray text-sm mb-2">Weak password. Must contain:</Text>
                 <View>
                     {[
@@ -78,7 +76,6 @@ const PasswordForm: React.FC<PasswordFormProps> = ({ formData, onBack, onNext })
                         { label: "At least 8 characters", valid: hasMinLength },
                     ].map((rule, index) => (
                         <View key={index} className="flex-row items-center mb-1">
-                            {/* Círculo con ícono */}
                             <View
                                 className={`w-4 h-4 my-1 rounded-full justify-center items-center ${rule.valid ? "bg-green-500" : "bg-light-gray"
                                     }`}
@@ -89,13 +86,11 @@ const PasswordForm: React.FC<PasswordFormProps> = ({ formData, onBack, onNext })
                                     color={rule.valid ? "white" : "black"}
                                 />
                             </View>
-                            {/* Texto de la regla */}
                             <Text className="ml-2 text-text-gray">{rule.label}</Text>
                         </View>
                     ))}
                 </View>
 
-                {/* Confirmar contraseña */}
                 <View className="relative mt-4">
                     <TextInput
                     className="border py-2 px-5 text-black rounded-lg w-full text-base pr-10 border-gray-color"
@@ -113,7 +108,6 @@ const PasswordForm: React.FC<PasswordFormProps> = ({ formData, onBack, onNext })
                 </View>
 
                 <View className="mt-2 h-12 justify-center">
-                    {/* Mensaje de error de contraseña */}
                     {password.length > 0 && strength < 3 && (
                         <Text className="text-red-500 text-sm">
                             Your password does not meet the security requirements.
@@ -126,9 +120,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({ formData, onBack, onNext })
                     )}
                 </View>
 
-                {/* Botones */}
                 <View className="flex-row justify-end mt-6 space-x-4">
-                    {/* Botón "Back" */}
                     <TouchableOpacity
                         className="px-8 py-4 bg-gray-color rounded-full"
                         onPress={onBack}
