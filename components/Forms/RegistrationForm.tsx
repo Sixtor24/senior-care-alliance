@@ -2,6 +2,7 @@ import ImagesPath from "@/assets/ImagesPath";
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Image, Alert } from "react-native";
 import CareDropdown from "../ui/CareDropdown";
+import FooterForm from '@/components/ui/FooterForm';
 
 interface RegistrationFormProps {
   onNext: (data: FormData) => void;
@@ -68,11 +69,12 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onNext, formData })
   };
 
   return (
+    <>
       <View
-        className="bg-white px-10 py-6 rounded-2xl drop-shadow-md w-full mb-3 max-w-xl"
-        style={{ zIndex: 3000 }}
+        className="bg-white px-14 py-8 rounded-2xl drop-shadow-md w-full mb-3 max-w-[38rem]"
+        style={{zIndex: 1}}
       >
-        <Text className="text-center text-[40px] font-extralight pb-5">
+        <Text className="text-center text-[40px] font-extralight pb-7">
           Partner Information
         </Text>
         <View className="flex-col">
@@ -153,6 +155,8 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onNext, formData })
           </View>
         </View>
       </View >
+      <FooterForm />
+      </>
   );
 };
 

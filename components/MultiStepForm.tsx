@@ -95,9 +95,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ onStepChange }) => {
                     />
                 )}
             </Animated.View>
-            <View className="items-center mt-3">
-                <Text className="text-gray-500">© 2025 Senior Care Alliance</Text>
-            </View>
         </View>
     );
 };

@@ -23,7 +23,7 @@ const RegistrationSteps: React.FC<RegistrationStepsProps> = ({
                 }}
             >
                 <Text
-                    className={`text-lg font-light ${isActive ? "text-[#0E67C7]" : "text-white"
+                    className={`text-lg font-extralight  ${isActive ? "text-[#0E67C7]" : "text-text-blue"
                         }`}
                 >
                     {number}
@@ -32,7 +32,7 @@ const RegistrationSteps: React.FC<RegistrationStepsProps> = ({
 
             <View className="mt-2 w-16 items-center">
                 <Text
-                    className={`text-xs text-center ${isActive ? "text-white" : "text-text-blue"
+                    className={`text-sm font-light  text-center ${isActive ? "text-white" : "text-text-blue"
                         }`}
                 >
                     {label}

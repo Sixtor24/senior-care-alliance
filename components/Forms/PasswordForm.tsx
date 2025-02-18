@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
 import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import ImagesPath from "@/assets/ImagesPath";
+import FooterForm from '@/components/ui/FooterForm';
 
 interface PasswordFormProps {
     formData: any; 
@@ -31,6 +32,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({ formData, onBack, onNext })
     };
 
     return (
+        <>
             <View className="bg-white px-10 py-6 rounded-2xl drop-shadow-md w-full max-w-xl">
                 <Text className="text-center text-[40px] text-black font-extralight pb-5">Create Password</Text>
 
@@ -141,6 +143,8 @@ const PasswordForm: React.FC<PasswordFormProps> = ({ formData, onBack, onNext })
                     </TouchableOpacity>
                 </View>
             </View>
+            <FooterForm />
+        </>
     );
 };
 
