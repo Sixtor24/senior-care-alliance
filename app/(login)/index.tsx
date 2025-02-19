@@ -4,7 +4,7 @@ import RegistrationSteps from "@/components/RegistrationSteps";
 import MultiStepForm from "@/components/MultiStepForm";
 import { useState } from "react";
 
-export default function Index() {
+export default function Login() {
   const [activeStep, setActiveStep] = useState(1);
   const steps = [
     { id: "step-1", number: "1", label: "Partner Information", isActive: activeStep === 1 },

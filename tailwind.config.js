@@ -15,7 +15,9 @@ module.exports = {
         'gray-color': '#D8DEE6',
         'text-gray': '#878B99',
         'light-gray': '#D9D9D9',
+        'sidebar-gray': '#8D8D8D',
         'black': '#101423',
+        'background-gray': '#EFF0F4',
       },
       spacing: {
         'custom-padding-horizontal': '15.1px', 
