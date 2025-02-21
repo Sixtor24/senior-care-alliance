@@ -1,4 +1,5 @@
-import { ProfileData, MenuItem } from '../types/profile';
+import { ProfileData } from '../types/profile';
+import { ProfileMenuItem } from '../components/ProfileMenu';
 
 // Mock profile data
 export const profileData: ProfileData = {
@@ -8,26 +9,20 @@ export const profileData: ProfileData = {
 };
 
 // Mock menu items with placeholder actions
-export const menuItems: MenuItem[] = [
+export const menuItems: ProfileMenuItem[] = [
     {
-        label: "Manage Team",
-        onPress: () => {
-            console.log("Manage Team clicked");
-            // Will be replaced with actual API call or navigation
-        }
+        id: 'team',
+        label: 'Team',
+        onPress: () => console.log('Team clicked')
     },
     {
-        label: "Settings",
-        onPress: () => {
-            console.log("Settings clicked");
-            // Will be replaced with actual API call or navigation
-        }
+        id: 'settings',
+        label: 'Settings',
+        onPress: () => console.log('Settings clicked')
     },
     {
-        label: "Logout",
-        onPress: () => {
-            console.log("Logout clicked");
-            // Will be replaced with actual API call or navigation
-        }
+        id: 'logout',
+        label: 'Logout',
+        onPress: () => console.log('Logout clicked')
     }
 ];

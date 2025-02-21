@@ -4,14 +4,14 @@ import { MaterialIcons, Octicons, Feather } from '@expo/vector-icons';
 import { ChatHistory } from '../types/chat';
 import LoadingSkeleton from './ui/LoadingSkeleton';
 
-export type ActiveView = 'chat' | 'portfolio' | 'other';
+export type ActiveView = 'chat' | 'portfolio' | 'facility';
 
 interface SidebarProps {
     selectedItem: string;
     onSelectItem: (item: string) => void;
     chatHistory: ChatHistory;
     isLoading: boolean;
-    currentView: 'chat' | 'portfolio' | 'other';
+    currentView: 'chat' | 'portfolio' | 'facility';
     activeView: ActiveView;
     onChangeView: (view: ActiveView) => void;
 }
@@ -100,8 +100,8 @@ const Sidebar = ({ selectedItem, onSelectItem, chatHistory, isLoading, currentVi
                                     isLoading ? (
                                         <Text>Loading...</Text>
                                     ) : (
-                                        chatHistory.map((section, index) => (
-                                            <View key={index} className="w-full gap-1">
+                                        chatHistory.map((section) => (
+                                            <View key={section.title} className="w-full gap-1">
                                                 <Text className="text-[0.7rem] pl-4 py-2 font-light uppercase text-sidebar-gray">
                                                     {section.title}
                                                 </Text>

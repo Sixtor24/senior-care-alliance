@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Image } from "react-native";
 import { Octicons, AntDesign, MaterialIcons } from '@expo/vector-icons';
 
 interface ProfileMenuItem {
+    id: string;
     label: string;
     onPress: () => void;
 }
@@ -52,30 +53,30 @@ const ProfileMenu = ({ profileImage, userName, userEmail, menuItems }: ProfileMe
                     </View>
 
                     <View className="">
-                        {menuItems.map((item, index) => (
+                        {menuItems.map((item) => (
                             <TouchableOpacity 
-                                key={index}
+                                key={item.id}
                                 className="flex-row items-center py-2 px-3 rounded-md hover:bg-gray-50"
                                 onPress={() => {
-                                    setActiveIndex(index);
+                                    setActiveIndex(menuItems.findIndex(i => i.id === item.id));
                                     item.onPress();
                                 }}
                             >
-                                {index === 0 && (
+                                {menuItems.findIndex(i => i.id === item.id) === 0 && (
                                     <Octicons 
                                         name="people" 
                                         size={21} 
                                         color={activeIndex === 0 ? '#0E67C7' : '#878B99'} 
                                     />
                                 )}
-                                {index === 1 && (
+                                {menuItems.findIndex(i => i.id === item.id) === 1 && (
                                     <AntDesign 
                                         name="setting" 
                                         size={21} 
                                         color={activeIndex === 1 ? '#0E67C7' : '#878B99'} 
                                     />
                                 )}
-                                {index === 2 && (
+                                {menuItems.findIndex(i => i.id === item.id) === 2 && (
                                     <MaterialIcons 
                                         name="logout" 
                                         size={21} 
