@@ -7,17 +7,17 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
 
-# Copy the rest of the application code
+# Copy the rest of your application code
 COPY . .
 
-# Build the web app using Expo export (ensure your build output directory matches below)
-RUN npm run build:web
+# Build the web app using the new Expo export command for web
+RUN npx expo export -p web
 
 # Stage 2: Serve the built app with Nginx
 FROM nginx:alpine
 
 # Copy the built static files from the builder stage to Nginx's html directory
-COPY --from=builder /app/web-build /usr/share/nginx/html
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Expose the default Nginx port
 EXPOSE 80
