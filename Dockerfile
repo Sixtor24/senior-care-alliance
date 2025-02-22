@@ -1,20 +1,25 @@
-# Usar una imagen base de Node.js
-FROM node:20-alpine
+# Stage 1: Build the app
+FROM node:20-alpine as builder
 
-# Establecer el directorio de trabajo dentro del contenedor
 WORKDIR /app
 
-# Copiar los archivos package.json y package-lock.json (si existe)
+# Copy package files and install dependencies
 COPY package*.json ./
-
-# Instalar las dependencias
 RUN npm install --legacy-peer-deps
 
-# Copiar el resto del código fuente
+# Copy the rest of the application code
 COPY . .
 
-# Exponer el puerto en el que se ejecutará la aplicación web
-EXPOSE 8081
+# Build the web app using Expo export (ensure your build output directory matches below)
+RUN npm run build:web
 
-# Comando para iniciar la aplicación web
-CMD ["npm", "run", "web"]
+# Stage 2: Serve the built app with Nginx
+FROM nginx:alpine
+
+# Copy the built static files from the builder stage to Nginx's html directory
+COPY --from=builder /app/web-build /usr/share/nginx/html
+
+# Expose the default Nginx port
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
