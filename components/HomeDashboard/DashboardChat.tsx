@@ -1,8 +1,10 @@
 import ImagesPath from '@/assets/ImagesPath';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { useChat } from '@/hooks/useChat';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import chatService from '@/services/chatService';
 
 interface DashboardChatProps {
     title?: string;
@@ -17,23 +19,40 @@ const DashboardChat = ({
     disclaimer = "Senior Care Alliance can make mistakes. Check important info.",
     onChatUpdated
 }: DashboardChatProps) => {
-    const { messages, sendMessage, isLoading: isSending, error: chatError } = useChat();
+    const { messages, sendMessage, isLoading: isSending, error: chatError, loadConversation } = useChat();
     const [inputText, setInputText] = useState('');
     const [error, setError] = useState('');
     const scrollViewRef = useRef<ScrollView>(null);
+
+    useEffect(() => {
+        if (onChatUpdated) {
+            const loadSelectedChat = async () => {
+                const selectedChatId = await AsyncStorage.getItem('selectedChatId');
+                if (selectedChatId) {
+                    await loadConversation(selectedChatId);
+                }
+            };
+            loadSelectedChat();
+        }
+    }, [onChatUpdated]);
 
     const handleSubmit = async () => {
         if (!inputText.trim() || isSending) return;
 
         try {
             setError('');
-            await sendMessage(inputText);
+            const response = await sendMessage(inputText);
             setInputText('');
             scrollViewRef.current?.scrollToEnd({ animated: true });
             
-            // Solo actualizamos el sidebar, no todo el chat
+            const chatTitle = inputText.substring(0, 30) + (inputText.length > 30 ? '...' : '');
             if (onChatUpdated) {
-                setTimeout(onChatUpdated, 1000); // Pequeño delay para asegurar que el guardado se completó
+                await chatService.saveChatToHistory({
+                    id: response.thread_id,
+                    text: chatTitle,
+                    timestamp: new Date()
+                });
+                setTimeout(onChatUpdated, 1000);
             }
 
         } catch (error) {
@@ -42,36 +61,80 @@ const DashboardChat = ({
         }
     };
 
-    const renderMessage = (message: any) => (
-        <View
-            key={message.id}
-            className={`flex-row items-start ${message.type === 'user' ? 'justify-end' : 'justify-start'
-                }`}
-        >
-            <View
-                className={`rounded-2xl p-4 ${message.type === 'user'
-                        ? 'bg-dark-blue max-w-[650px]'
-                        : 'bg-gray-200 border border-gray-200 max-w-[550px]'
-                    }`}
-            >
-                <Text
-                    className={`text-[14px] font-light ${message.type === 'user' ? 'text-white' : 'text-gray-900'
-                        }`}
-                >
-                    {message.text}
-                </Text>
-            </View>
-            {message.type === 'user' && (
-                <View className="w-10 h-10 rounded-full ml-2 overflow-hidden flex-shrink-0 items-center justify-center">
-                    <Image
-                        source={ImagesPath.USER_AVATAR}
-                        className="w-full h-full"
-                        resizeMode="cover"
-                    />
+    const renderMessage = (message: any) => {
+        // Helper function to format markdown-style content
+        const formatMarkdownContent = (text: string) => {
+            if (!text.includes('### ') && !text.includes('**')) return text;
+
+            return (
+                <View className="gap-4">
+                    {text.split('\n').map((section, index) => {
+                        if (section.startsWith('### ')) {
+                            return (
+                                <View key={index} className="gap-2">
+                                    <Text className="text-lg font-semibold text-dark-blue">
+                                        {section.replace('### ', '')}
+                                    </Text>
+                                </View>
+                            );
+                        } else if (section.includes('**')) {
+                            const parts = section.split('**');
+                            return (
+                                <Text key={index} className="text-[14px] font-light">
+                                    {parts.map((part, partIndex) => (
+                                        <Text
+                                            key={partIndex}
+                                            className={partIndex % 2 === 1 ? "font-bold" : "font-light"}
+                                        >
+                                            {part}
+                                        </Text>
+                                    ))}
+                                </Text>
+                            );
+                        } else {
+                            return (
+                                <Text key={index} className="text-[14px] font-light">
+                                    {section}
+                                </Text>
+                            );
+                        }
+                    })}
                 </View>
-            )}
-        </View>
-    );
+            );
+        };
+
+        return (
+            <View
+                key={message.id}
+                className={`flex-row items-start ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+                <View
+                    className={`rounded-2xl p-4 ${
+                        message.type === 'user'
+                            ? 'bg-dark-blue max-w-[650px]'
+                            : 'bg-gray-200 border border-gray-200 max-w-[550px]'
+                    }`}
+                >
+                    {message.type === 'user' ? (
+                        <Text className="text-[14px] font-light text-white">
+                            {message.text}
+                        </Text>
+                    ) : (
+                        formatMarkdownContent(message.text)
+                    )}
+                </View>
+                {message.type === 'user' && (
+                    <View className="w-10 h-10 rounded-full ml-2 overflow-hidden flex-shrink-0 items-center justify-center">
+                        <Image
+                            source={ImagesPath.USER_AVATAR}
+                            className="w-full h-full"
+                            resizeMode="cover"
+                        />
+                    </View>
+                )}
+            </View>
+        );
+    };
 
     return (
         <View className={`flex flex-col h-full ${messages.length === 0 ? 'justify-center top-48 gap-10' : ''}`}>

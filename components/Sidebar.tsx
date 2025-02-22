@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
 import { MaterialIcons, Octicons, Feather } from '@expo/vector-icons';
 import { ChatHistory } from '../types/chat';
 import LoadingSkeleton from './ui/LoadingSkeleton';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type ActiveView = 'chat' | 'portfolio' | 'facility';
 
@@ -52,6 +53,11 @@ const SidebarSkeleton = () => (
 );
 
 const Sidebar = ({ selectedItem, onSelectItem, chatHistory, isLoading, currentView, activeView, onChangeView }: SidebarProps) => {
+    const handleChatSelect = async (chatId: string) => {
+        await AsyncStorage.setItem('selectedChatId', chatId);
+        onSelectItem(chatId);
+    };
+
     return (
         <View className="w-80 md:w-72 lg:w-64 xl:w-1/6 h-full z-10">
             <View
@@ -108,8 +114,10 @@ const Sidebar = ({ selectedItem, onSelectItem, chatHistory, isLoading, currentVi
                                                 {section.items.map((item) => (
                                                     <TouchableOpacity 
                                                         key={item.id}
-                                                        className={`hover:bg-gray-50 rounded-md px-4 py-2 ${selectedItem === item.id ? 'bg-gray-100' : 'bg-white'}`}
-                                                        onPress={() => onSelectItem(item.id)}
+                                                        className={`hover:bg-gray-50 rounded-md px-4 py-2 ${
+                                                            selectedItem === item.id ? 'bg-gray-100' : 'bg-white'
+                                                        }`}
+                                                        onPress={() => handleChatSelect(item.id)}
                                                     >
                                                         <Text className="text-black text-[0.75rem]">{item.text}</Text>
                                                     </TouchableOpacity>

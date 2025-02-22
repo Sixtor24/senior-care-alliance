@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import chatService from '@/services/chatService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Message {
     id: string;
@@ -101,12 +102,34 @@ export const useChat = (initialThreadId?: string) => {
         setError(null);
     };
 
+    const loadConversation = async (chatId: string) => {
+        try {
+            setIsLoading(true);
+            const history = await chatService.getThreadHistory(chatId);
+            
+            const formattedMessages = history.messages.map((msg: { id: string; text: string; type: 'user' | 'assistant'; timestamp: string }) => ({
+                ...msg,
+                timestamp: new Date(msg.timestamp)
+            }));
+
+            setMessages(formattedMessages);
+            setThreadId(chatId);
+            await AsyncStorage.setItem('selectedChatId', chatId);
+        } catch (error) {
+            console.error('Error loading conversation:', error);
+            setError('Failed to load conversation');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return {
         messages,
         isLoading,
         error,
         sendMessage,
         threadId,
-        clearMessages
+        clearMessages,
+        loadConversation
     };
 }; 
