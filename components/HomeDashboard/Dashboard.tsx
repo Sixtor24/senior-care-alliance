@@ -7,12 +7,14 @@ import DashboardPortfolio from './DashboartPortfolio';
 import Sidebar, { ActiveView } from '../Sidebar';
 import ProfileMenu from '../ProfileMenu';
 import { profileData, menuItems } from '../../data/profileData';
-import { ChatHistory } from '../../types/chat';
+import { ChatHistory, ChatMessage } from '../../types/chat';
 import DashboardFacility from './DashboardFacility';
 import chatService from '@/services/chatService';
 
 interface DashboardProps {
     isLoading: boolean;
+    chatHistory: ChatHistory;
+    onChatUpdated: (newMessage: ChatMessage) => Promise<void>;
 }
 
 const DashboardSkeleton = () => (
@@ -26,10 +28,9 @@ const DashboardSkeleton = () => (
     </View>
 );
 
-const Dashboard = ({ isLoading: initialLoading }: DashboardProps) => {
+const Dashboard = ({ isLoading, chatHistory, onChatUpdated }: DashboardProps) => {
     const [activeView, setActiveView] = useState<ActiveView>('chat');
-    const [chatHistory, setChatHistory] = useState<ChatHistory>([]);
-    const [isLoading, setIsLoading] = useState(initialLoading);
+    const [chatHistoryState, setChatHistory] = useState<ChatHistory>(chatHistory);
 
     const loadChatHistory = async () => {
         try {
@@ -40,7 +41,6 @@ const Dashboard = ({ isLoading: initialLoading }: DashboardProps) => {
         }
     };
 
-    // Solo cargar el historial inicial
     useEffect(() => {
         loadChatHistory();
     }, []);

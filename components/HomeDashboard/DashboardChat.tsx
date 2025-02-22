@@ -74,56 +74,45 @@ const DashboardChat = ({
     );
 
     return (
-        <View className="items-center justify-center">
-            <View className="max-w-[1000px] w-full">
-                <View
-                    className={`w-full ${messages.length === 0 ? 'justify-center items-center' : 'justify-start'
-                        }`}
-                >
-                    <ScrollView
-                        ref={scrollViewRef}
-                        className="w-full py-8"
-                        showsVerticalScrollIndicator={false}
-                        contentContainerStyle={{
-                            flexGrow: 0, // Cambiado a 0 para evitar que se estire
-                            justifyContent: messages.length === 0 ? 'center' : 'flex-start',
-                        }}
-                        style={{
-                            maxHeight: '100%', // Asegura que el ScrollView no exceda el contenedor
-                        }}
-                    >
-                        {messages.length > 0 && (
-                            <Animated.View
-                                entering={FadeIn.duration(400)}
-                                className="flex-row items-start mb-4"
-                            >
-                                <View className='gap-6 w-full'>
-                                    {messages.map(renderMessage)}
-                                </View>
-                            </Animated.View>
-                        )}
-                    </ScrollView>
-                </View>
-            </View>
-            <View
-                className={`w-full ${messages.length > 0 ? 'fixed bottom-0 left-0 right-0 bg-background-gray' : 'top-48'}`}
-                style={{
-                    zIndex: 10
-                }}
-            >
-                {messages.length === 0 && (
-                    <Text className="text-2xl md:text-3xl lg:text-4xl font-extralight text-dark-blue mb-4 md:mb-6 text-center">
+        <View className={`flex flex-col h-full ${messages.length === 0 ? 'justify-center top-48 gap-10' : ''}`}>
+            {/* Chat Messages Area */}
+            <View className={`${messages.length === 0 ? 'flex items-center justify-center' : 'flex-1 overflow-hidden'}`}>
+                {messages.length === 0 ? (
+                    <Text className="text-2xl md:text-3xl lg:text-4xl font-extralight text-dark-blue text-center">
                         {title}
                     </Text>
+                ) : (
+                    <ScrollView
+                        ref={scrollViewRef}
+                        className="w-full p-8 pb-20"
+                        showsVerticalScrollIndicator={false}
+                        style={{ maxHeight: '65vh' }}
+                    >
+                        <Animated.View
+                            entering={FadeIn.duration(400)}
+                            className="flex-row items-start mb-4"
+                        >
+                            <View className='gap-6 px-12 w-full'>
+                                {messages.map(renderMessage)}
+                            </View>
+                        </Animated.View>
+                    </ScrollView>
                 )}
+            </View>
+
+            {/* Input Area - Always fixed at bottom */}
+            <View 
+                className={`w-full bg-background-gray ${
+                    messages.length === 0 
+                        ? 'flex items-center justify-center'
+                        : 'fixed bottom-0 left-0 right-0'
+                }`}
+            >
                 <View
                     className="w-full max-w-[1000px] mx-auto flex-row items-start bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl"
                     style={{
                         shadowColor: '#000',
-                        shadowOffset: {
-                            width: 0,
-                            height: 0,
-                        },
+                        shadowOffset: { width: 0, height: 0 },
                         shadowOpacity: 0.1,
                         shadowRadius: 10,
                     }}
@@ -148,10 +137,7 @@ const DashboardChat = ({
                         {isSending ? (
                             <ActivityIndicator color="white" size="small" />
                         ) : (
-                            <Image
-                                source={ImagesPath.ARROW}
-                                className="w-4 h-4 md:w-5 md:h-5"
-                            />
+                            <Image source={ImagesPath.ARROW} className="w-4 h-4 md:w-5 md:h-5" />
                         )}
                     </TouchableOpacity>
                 </View>
@@ -161,7 +147,7 @@ const DashboardChat = ({
                     </Text>
                 )}
                 {messages.length > 0 && (
-                    <Text className="text-xs md:text-sm mb-4 text-[#6b7280] mt-6 md:mt-4 text-center max-w-[1000px] mx-auto">
+                    <Text className="text-xs md:text-sm text-[#6b7280] mt-4 text-center">
                         {disclaimer}
                     </Text>
                 )}

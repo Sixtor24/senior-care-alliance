@@ -9,3 +9,10 @@ export interface ChatSection {
 }
 
 export type ChatHistory = ChatSection[];
+
+export interface ChatMessage {
+    id: string;
+    text: string;
+    type: 'user' | 'assistant';
+    timestamp: Date;
+}

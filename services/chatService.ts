@@ -1,5 +1,6 @@
 import { ChatHistory, ChatItem } from "@/types/chat";
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Mock data - will be replaced with actual API calls later
 const mockChatHistory: ChatHistory = [
@@ -265,6 +266,26 @@ class ChatService {
         } catch (error) {
             console.error('Error saving chat to history:', error);
             throw new Error('Failed to save chat to history');
+        }
+    }
+
+    // Método para guardar el historial del chat
+    async saveChatHistory(chatHistory: ChatHistory) {
+        try {
+            await AsyncStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        } catch (error) {
+            console.error('Error saving chat history:', error);
+        }
+    }
+
+    // Método para cargar el historial del chat
+    async loadChatHistory(): Promise<ChatHistory> {
+        try {
+            const history = await AsyncStorage.getItem('chatHistory');
+            return history ? JSON.parse(history) : [];
+        } catch (error) {
+            console.error('Error loading chat history:', error);
+            return [];
         }
     }
 }
