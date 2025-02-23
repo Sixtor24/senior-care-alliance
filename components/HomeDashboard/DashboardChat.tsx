@@ -4,7 +4,6 @@ import { View, Text, TextInput, TouchableOpacity, Image, Platform, ScrollView, A
 import { useChat } from '@/hooks/useChat';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import chatService from '@/services/chatService';
 
 interface DashboardChatProps {
     title?: string;
@@ -41,19 +40,9 @@ const DashboardChat = ({
 
         try {
             setError('');
-            const response = await sendMessage(inputText);
+            await sendMessage(inputText);
             setInputText('');
             scrollViewRef.current?.scrollToEnd({ animated: true });
-            
-            const chatTitle = inputText.substring(0, 30) + (inputText.length > 30 ? '...' : '');
-            if (onChatUpdated) {
-                await chatService.saveChatToHistory({
-                    id: response.thread_id,
-                    text: chatTitle,
-                    timestamp: new Date()
-                });
-                setTimeout(onChatUpdated, 1000);
-            }
 
         } catch (error) {
             setError('Failed to send message');
@@ -62,10 +51,126 @@ const DashboardChat = ({
     };
 
     const renderMessage = (message: any) => {
-        // Helper function to format markdown-style content
-        const formatMarkdownContent = (text: string) => {
-            if (!text.includes('### ') && !text.includes('**')) return text;
+        // Helper function to check if response contains structured data
+        const hasStructuredData = (message: any) => {
+            return message.bigquery_data &&
+                Array.isArray(message.bigquery_data) &&
+                message.bigquery_data.length > 0;
+        };
 
+        // Helper function to render dynamic table
+        const renderDynamicTable = (data: any) => {
+            if (Array.isArray(data)) {
+                const headers = Object.keys(data[0] || {});
+                return (
+                    <View className="mt-4 mb-4">
+                        {/* Main Container */}
+                        <View className="border-2 border-gray-200 rounded-xl overflow-hidden bg-white shadow-md">
+                            {/* Scrollable Container */}
+                            <ScrollView
+                                horizontal={true}
+                                showsHorizontalScrollIndicator={true}
+                                className="flex-1"
+                            >
+                                <View className="min-w-full">
+                                    {/* Headers Section */}
+                                    <View className="sticky top-0 z-10 border-b-2 border-gray-200">
+                                        <View className="flex-row bg-[#f1f5f9]">
+                                            {headers.map((header, index) => (
+                                                <View
+                                                    key={index}
+                                                    className={`flex-1 min-w-[150px] ${header.toLowerCase().includes('nombre') ? 'min-w-[250px]' : ''
+                                                        } ${header.toLowerCase().includes('dirección') ? 'min-w-[200px]' : ''
+                                                        }`}
+                                                >
+                                                    <Text
+                                                        className="px-6 py-4 font-bold text-[13px] text-gray-700 capitalize border-r border-gray-300"
+                                                        style={{
+                                                            textAlign: typeof data[0][header] === 'number' ? 'right' : 'left'
+                                                        }}
+                                                    >
+                                                        {header.replace(/_/g, ' ')}
+                                                    </Text>
+                                                </View>
+                                            ))}
+                                        </View>
+                                    </View>
+
+                                    {/* Table Body */}
+                                    <View className="bg-white">
+                                        {data.map((item, rowIndex) => (
+                                            <View
+                                                key={rowIndex}
+                                                className={`flex-row ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                                                    } hover:bg-gray-100`}
+                                            >
+                                                {headers.map((header, colIndex) => (
+                                                    <View
+                                                        key={colIndex}
+                                                        className={`flex-1 min-w-[150px] ${header.toLowerCase().includes('nombre') ? 'min-w-[250px]' : ''
+                                                            } ${header.toLowerCase().includes('dirección') ? 'min-w-[200px]' : ''
+                                                            }`}
+                                                    >
+                                                        <Text
+                                                            className={`px-6 py-4 text-[13px] ${typeof item[header] === 'number'
+                                                                    ? 'text-right font-medium text-gray-700'
+                                                                    : 'text-gray-600'
+                                                                } border-r border-gray-200 border-b`}
+                                                        >
+                                                            {typeof item[header] === 'object'
+                                                                ? JSON.stringify(item[header])
+                                                                : String(item[header])}
+                                                        </Text>
+                                                    </View>
+                                                ))}
+                                            </View>
+                                        ))}
+                                    </View>
+                                </View>
+                            </ScrollView>
+                        </View>
+
+                        {/* Table Footer */}
+                        <View className="mt-2 px-2 flex-row justify-between items-center">
+                            <Text className="text-[11px] text-gray-500 italic">
+                                Total registros: {data.length}
+                            </Text>
+                            <Text className="text-[11px] text-gray-500">
+                                Desliza horizontalmente para ver más información →
+                            </Text>
+                        </View>
+                    </View>
+                );
+            } else {
+                // Handle single object with improved styling
+                return (
+                    <View className="mt-4 mb-4">
+                        <View className="border-2 border-gray-200 rounded-xl overflow-hidden bg-white shadow-md">
+                            {Object.entries(data).map(([key, value], index) => (
+                                <View
+                                    key={index}
+                                    className={`flex-row ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                                        } ${index < Object.entries(data).length - 1 ? 'border-b border-gray-200' : ''
+                                        }`}
+                                >
+                                    <Text className="w-1/3 px-6 py-4 bg-[#f8fafc] text-[13px] font-semibold text-gray-700 capitalize border-r border-gray-200">
+                                        {key.replace(/_/g, ' ')}
+                                    </Text>
+                                    <Text className="w-2/3 px-6 py-4 text-[13px] text-gray-600">
+                                        {typeof value === 'object'
+                                            ? JSON.stringify(value)
+                                            : String(value)}
+                                    </Text>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+                );
+            }
+        };
+
+        // Helper function to format markdown-style content with table support
+        const formatMarkdownContent = (text: string, messageData: any) => {
             return (
                 <View className="gap-4">
                     {text.split('\n').map((section, index) => {
@@ -75,6 +180,9 @@ const DashboardChat = ({
                                     <Text className="text-lg font-semibold text-dark-blue">
                                         {section.replace('### ', '')}
                                     </Text>
+                                    {/* Render table only if structured data exists */}
+                                    {hasStructuredData(messageData) &&
+                                        renderDynamicTable(messageData.bigquery_data)}
                                 </View>
                             );
                         } else if (section.includes('**')) {
@@ -109,18 +217,17 @@ const DashboardChat = ({
                 className={`flex-row items-start ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
                 <View
-                    className={`rounded-2xl p-4 ${
-                        message.type === 'user'
+                    className={`rounded-2xl p-4 ${message.type === 'user'
                             ? 'bg-dark-blue max-w-[650px]'
                             : 'bg-gray-200 border border-gray-200 max-w-[550px]'
-                    }`}
+                        }`}
                 >
                     {message.type === 'user' ? (
                         <Text className="text-[14px] font-light text-white">
                             {message.text}
                         </Text>
                     ) : (
-                        formatMarkdownContent(message.text)
+                        formatMarkdownContent(message.text, message)
                     )}
                 </View>
                 {message.type === 'user' && (
@@ -164,12 +271,11 @@ const DashboardChat = ({
             </View>
 
             {/* Input Area - Always fixed at bottom */}
-            <View 
-                className={`w-full bg-background-gray ${
-                    messages.length === 0 
+            <View
+                className={`w-full bg-background-gray ${messages.length === 0
                         ? 'flex items-center justify-center'
                         : 'fixed bottom-0 left-0 right-0'
-                }`}
+                    }`}
             >
                 <View
                     className="w-full max-w-[1000px] mx-auto flex-row items-start bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl"

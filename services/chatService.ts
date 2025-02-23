@@ -1,180 +1,89 @@
-import { ChatHistory, ChatItem } from "@/types/chat";
+import { ChatHistory, ChatItem, ChatMessage, ChatResponse, SaveChatParams, ThreadHistoryResponse } from "@/types/chat";
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Mock data - will be replaced with actual API calls later
-const mockChatHistory: ChatHistory = [
-    {
-        title: "Yesterday",
-        items: [
-            { id: 'chat1', text: 'Chat History 1' },
-            { id: 'chat2', text: 'Chat History 2' },
-            { id: 'chat3', text: 'Chat History 3' },
-        ]
-    },
-    {
-        title: "30 days before",
-        items: [
-            { id: 'chat4', text: 'Chat History 1' },
-            { id: 'chat5', text: 'Chat History 2' },
-            { id: 'chat6', text: 'Chat History 3' },
-        ]
-    },
-    {
-        title: "january",
-        items: [
-            { id: 'chat7', text: 'Chat History 1' },
-            { id: 'chat8', text: 'Chat History 2' },
-            { id: 'chat9', text: 'Chat History 3' },
-        ]
-    }
-];
-
 const API_BASE_URL = 'https://sca-api-535434239234.us-central1.run.app';
-
-interface ChatRequest {
-    message: string;
-    thread_id: string;
-}
-
-interface ChatResponse {
-    response: string;
-    thread_id: string;
-    bigquery_data: Record<string, any>[];
-    message?: string;
-}
-
-interface ThreadHistoryResponse {
-    messages: {
-        id: string;
-        text: string;
-        type: 'user' | 'assistant';
-        timestamp: string;
-    }[];
-    thread_id: string;
-}
-
-interface ChatMessage {
-    message: string;
-    context?: string;
-    metadata?: {
-        facilityId?: string;
-        userId?: string;
-    };
-}
 
 class ChatService {
     private readonly API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sca-api-535434239234.us-central1.run.app';
 
     // Get all chat history
     async getChatHistory(): Promise<ChatHistory> {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return mockChatHistory;
+        try {
+            const storedHistory = await AsyncStorage.getItem('chatHistory');
+            return storedHistory ? JSON.parse(storedHistory) : [];
+        } catch (error) {
+            console.error('Error loading chat history:', error);
+            return [];
+        }
     }
 
     // Get chat history by date range
     async getChatHistoryByDateRange(startDate: Date, endDate: Date): Promise<ChatHistory> {
-        // This will be implemented with real API
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return mockChatHistory;
+        try {
+            const storedHistory = await AsyncStorage.getItem('chatHistory');
+            const history: ChatHistory = storedHistory ? JSON.parse(storedHistory) : [];
+            
+            return history.filter(section => {
+                const sectionDate = new Date(section.items[0]?.timestamp);
+                return sectionDate >= startDate && sectionDate <= endDate;
+            });
+        } catch (error) {
+            console.error('Error getting chat history by date range:', error);
+            return [];
+        }
     }
 
     // Get chat by ID
     async getChatById(chatId: string): Promise<ChatItem | null> {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const chat = mockChatHistory
-            .flatMap(section => section.items)
-            .find(item => item.id === chatId);
-        return chat || null;
+        try {
+            const storedHistory = await AsyncStorage.getItem('chatHistory');
+            const history: ChatHistory = storedHistory ? JSON.parse(storedHistory) : [];
+            
+            const chat = history
+                .flatMap(section => section.items)
+                .find(item => item.id === chatId);
+
+            return chat || null;
+        } catch (error) {
+            console.error('Error getting chat by ID:', error);
+            return null;
+        }
     }
 
     // Send a message to the chat API
     async sendMessage(message: string): Promise<ChatResponse> {
         if (!message || typeof message !== 'string') {
-            throw new Error('Invalid message format: Message must be a non-empty string');
+            throw new Error('Invalid message format');
         }
 
         try {
-            console.log('API URL:', this.API_URL); // Debug log
-            
-            const payload: ChatMessage = {
-                message: message.trim(),
-                context: 'facility',
-                metadata: {
-                    facilityId: '1',
-                    userId: '1',
-                }
-            };
-
-            console.log('Sending request to:', `${this.API_URL}/agents/chat`);
-            console.log('Request payload:', JSON.stringify(payload, null, 2));
-
             const response = await axios.post<ChatResponse>(
                 `${this.API_URL}/agents/chat`,
-                payload,
+                {
+                    message: message.trim(),
+                    context: 'facility'
+                },
                 {
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        // Add any auth token if required
-                        // 'Authorization': `Bearer ${token}`
-                    },
-                    timeout: 30000,
-                    validateStatus: (status) => status < 500, // Handle all non-500 responses
+                    }
                 }
             );
 
-            console.log('Response status:', response.status);
-            console.log('Response headers:', response.headers);
-            console.log('Response data:', response.data);
-
-            if (response.status === 200) {
+            if (response.status === 200 && response.data) {
                 return response.data;
             }
 
-            // Handle non-200 responses
-            switch (response.status) {
-                case 400:
-                    throw new Error('Bad request: ' + (response.data.message || 'Please check your input'));
-                case 401:
-                    throw new Error('Authentication required. Please log in.');
-                case 403:
-                    throw new Error('You do not have permission to use this feature.');
-                case 422:
-                    throw new Error('Invalid input: ' + (response.data.message || 'Please check your message'));
-                case 429:
-                    throw new Error('Too many requests. Please wait a moment.');
-                default:
-                    throw new Error(`Request failed with status ${response.status}`);
-            }
-
+            throw new Error('Error en la respuesta del servidor');
         } catch (error) {
-            console.error('Full error object:', error);
-
             if (axios.isAxiosError(error)) {
-                console.error('Axios error details:', {
+                console.error('API Error:', {
                     status: error.response?.status,
-                    statusText: error.response?.statusText,
-                    data: error.response?.data,
-                    headers: error.response?.headers,
-                    config: {
-                        url: error.config?.url,
-                        method: error.config?.method,
-                        headers: error.config?.headers,
-                    }
+                    data: error.response?.data
                 });
-
-                if (error.response) {
-                    const errorMessage = error.response.data?.message || error.message;
-                    throw new Error(`API Error: ${errorMessage}`);
-                } else if (error.request) {
-                    throw new Error('Network error: Unable to reach the server. Please check your connection.');
-                }
             }
-
-            // If we get here, it's an unexpected error
-            throw new Error(`Chat service error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            throw error;
         }
     }
 
@@ -208,25 +117,28 @@ class ChatService {
                     message: error.message
                 });
             }
-            // Return mock data as fallback
-            return mockChatHistory;
+            // Return empty array as fallback
+            return [];
         }
     }
 
-    async saveChatToHistory(chat: { id: string; text: string; timestamp: Date }): Promise<void> {
+    async saveChatToHistory(chat: SaveChatParams) {
         try {
-            // Obtener el historial actual
-            const currentHistory = await this.getChatHistory();
-            
-            // Crear nuevo item de chat
+            // Obtener el historial existente del localStorage
+            const storedHistory = await AsyncStorage.getItem('chatHistory');
+            let currentHistory: ChatHistory = storedHistory ? JSON.parse(storedHistory) : [];
+
+            // Crear nuevo chat item
             const newChatItem: ChatItem = {
                 id: chat.id,
-                text: chat.text
+                text: chat.text,
+                thread_id: chat.thread_id,
+                timestamp: chat.timestamp
             };
 
-            // Determinar la sección correcta basada en la fecha
+            // Organizar por fecha
             const today = new Date();
-            const chatDate = chat.timestamp;
+            const chatDate = new Date(chat.timestamp);
             
             let sectionTitle = '';
             if (chatDate.toDateString() === today.toDateString()) {
@@ -239,7 +151,7 @@ class ChatService {
                 sectionTitle = chatDate.toLocaleString('default', { month: 'long' });
             }
 
-            // Encontrar o crear la sección apropiada
+            // Encontrar o crear sección
             let section = currentHistory.find(s => s.title === sectionTitle);
             if (!section) {
                 section = {
@@ -249,20 +161,13 @@ class ChatService {
                 currentHistory.unshift(section);
             }
 
-            // Agregar el nuevo chat al principio de la sección
+            // Agregar nuevo chat al inicio de la sección
             section.items.unshift(newChatItem);
 
-            // Aquí podrías hacer una llamada API para persistir los cambios
-            // Por ahora, actualizamos el mock data
-            Object.assign(mockChatHistory, currentHistory);
+            // Guardar en localStorage
+            await AsyncStorage.setItem('chatHistory', JSON.stringify(currentHistory));
 
-            // Si tienes una API real, aquí harías la llamada:
-            // await axios.post(`${this.API_URL}/agents/chat/history`, {
-            //     threadId: chat.id,
-            //     title: chat.text,
-            //     timestamp: chat.timestamp
-            // });
-
+            return currentHistory;
         } catch (error) {
             console.error('Error saving chat to history:', error);
             throw new Error('Failed to save chat to history');
@@ -281,11 +186,67 @@ class ChatService {
     // Método para cargar el historial del chat
     async loadChatHistory(): Promise<ChatHistory> {
         try {
-            const history = await AsyncStorage.getItem('chatHistory');
-            return history ? JSON.parse(history) : [];
+            const storedHistory = await AsyncStorage.getItem('chatHistory');
+            return storedHistory ? JSON.parse(storedHistory) : [];
         } catch (error) {
             console.error('Error loading chat history:', error);
             return [];
+        }
+    }
+
+    async clearChatHistory() {
+        try {
+            await AsyncStorage.removeItem('chatHistory');
+            return [];
+        } catch (error) {
+            console.error('Error clearing chat history:', error);
+            throw error;
+        }
+    }
+
+    async updateChatHistory(newMessage: ChatMessage) {
+        try {
+            const currentHistory = await this.loadChatHistory();
+            const today = 'Today';
+
+            // Check for duplicates in history
+            const isDuplicate = currentHistory.some(section => 
+                section.items.some(item => 
+                    item.thread_id === newMessage.thread_id || 
+                    item.id === newMessage.id
+                )
+            );
+
+            if (!isDuplicate) {
+                let updatedHistory = [...currentHistory];
+                let todaySection = updatedHistory.find(section => section.title === today);
+
+                if (todaySection) {
+                    todaySection.items.unshift({
+                        id: newMessage.id,
+                        text: newMessage.text,
+                        thread_id: newMessage.thread_id,
+                        timestamp: newMessage.timestamp
+                    });
+                } else {
+                    updatedHistory.unshift({
+                        title: today,
+                        items: [{
+                            id: newMessage.id,
+                            text: newMessage.text,
+                            thread_id: newMessage.thread_id,
+                            timestamp: newMessage.timestamp
+                        }]
+                    });
+                }
+
+                await this.saveChatHistory(updatedHistory);
+                return updatedHistory;
+            }
+            return currentHistory;
+        } catch (error) {
+            console.error('Error updating chat history:', error);
+            throw error;
         }
     }
 }

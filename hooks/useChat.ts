@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import chatService from '@/services/chatService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ChatMessage } from '@/types/chat';
 
 interface Message {
     id: string;
@@ -14,7 +15,7 @@ interface Message {
     }>;
 }
 
-export const useChat = (initialThreadId?: string) => {
+export const useChat = (initialThreadId?: string, onChatUpdated?: (message: Message) => Promise<void>) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -29,42 +30,32 @@ export const useChat = (initialThreadId?: string) => {
                 id: Date.now().toString(),
                 text,
                 type: 'user',
-                timestamp: new Date()
+                timestamp: new Date(),
             };
-            
-            // Agregar mensaje del usuario inmediatamente
+
+            // Actualiza la UI inmediatamente
             setMessages(prev => [...prev, userMessage]);
 
+            // Envía el mensaje al servidor
             const response = await chatService.sendMessage(text);
 
-            // Agregar respuesta del asistente
-            const assistantMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                text: response.response,
-                type: 'assistant',
-                timestamp: new Date()
-            };
+            if (response && response.response) {
+                const assistantMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    text: response.response,
+                    type: 'assistant',
+                    timestamp: new Date(),
+                };
 
-            // Actualizar mensajes sin recargar todo el chat
-            setMessages(prev => [...prev, assistantMessage]);
-
-            // Actualizar threadId si es necesario
-            if (response.thread_id && !threadId) {
-                setThreadId(response.thread_id);
+                // Actualiza la UI con la respuesta del asistente
+                setMessages(prev => [...prev, assistantMessage]);
+            } else {
+                console.error('Respuesta vacía del servidor:', response);
+                setError('No se recibió respuesta del asistente');
             }
-
-            // Guardar en historial sin afectar la conversación actual
-            await chatService.saveChatToHistory({
-                id: response.thread_id,
-                text: text.substring(0, 50) + (text.length > 50 ? '...' : ''),
-                timestamp: new Date()
-            }).catch(console.error);
-
-            return response;
         } catch (error) {
-            setError('Failed to send message. Please try again.');
-            console.error('Chat error:', error);
-            throw error;
+            console.error('Error en sendMessage:', error);
+            setError('Error al enviar el mensaje');
         } finally {
             setIsLoading(false);
         }

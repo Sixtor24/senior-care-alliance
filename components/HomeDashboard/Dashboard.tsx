@@ -60,7 +60,7 @@ const Dashboard = ({ isLoading, chatHistory, onChatUpdated }: DashboardProps) =>
         }
     };
 
-    const handleChatUpdate = () => {
+    const handleChatUpdate = async () => {
         // Solo actualizar el historial del sidebar
         loadChatHistory();
     };

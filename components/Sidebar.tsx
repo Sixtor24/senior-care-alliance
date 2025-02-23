@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
 import { MaterialIcons, Octicons, Feather } from '@expo/vector-icons';
 import { ChatHistory } from '../types/chat';
 import LoadingSkeleton from './ui/LoadingSkeleton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SimpleLineIcons } from '@expo/vector-icons';
+import chatService from '@/services/chatService';
 
 export type ActiveView = 'chat' | 'portfolio' | 'facility';
 
@@ -53,9 +55,32 @@ const SidebarSkeleton = () => (
 );
 
 const Sidebar = ({ selectedItem, onSelectItem, chatHistory, isLoading, currentView, activeView, onChangeView }: SidebarProps) => {
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+
     const handleChatSelect = async (chatId: string) => {
         await AsyncStorage.setItem('selectedChatId', chatId);
         onSelectItem(chatId);
+    };
+
+    const handleDelete = async () => {
+        if (selectedThreadId) {
+            try {
+                const currentHistory = await chatService.loadChatHistory();
+                const updatedHistory = currentHistory.map(section => ({
+                    ...section,
+                    items: section.items.filter(item => item.thread_id !== selectedThreadId)
+                })).filter(section => section.items.length > 0);
+
+                await chatService.saveChatHistory(updatedHistory);
+                setShowDeleteModal(false);
+                if (onChangeView) {
+                    onChangeView('chat');
+                }
+            } catch (error) {
+                console.error('Error deleting chat:', error);
+            }
+        }
     };
 
     return (
@@ -114,12 +139,24 @@ const Sidebar = ({ selectedItem, onSelectItem, chatHistory, isLoading, currentVi
                                                 {section.items.map((item) => (
                                                     <TouchableOpacity 
                                                         key={item.id}
-                                                        className={`hover:bg-gray-50 rounded-md px-4 py-2 ${
+                                                        className={`group hover:bg-gray-50 rounded-md px-4 py-1 ${
                                                             selectedItem === item.id ? 'bg-gray-100' : 'bg-white'
                                                         }`}
                                                         onPress={() => handleChatSelect(item.id)}
                                                     >
-                                                        <Text className="text-black text-[0.75rem]">{item.text}</Text>
+                                                        <View className="flex-row justify-between items-center">
+                                                            <Text className="text-black text-[0.75rem] flex-1">{item.text}</Text>
+                                                            <TouchableOpacity
+                                                                className="invisible group-hover:visible p-2"
+                                                                onPress={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setSelectedThreadId(item.thread_id);
+                                                                    setShowDeleteModal(true);
+                                                                }}
+                                                            >
+                                                                <SimpleLineIcons name="options" size={16} color="#878B99" />
+                                                            </TouchableOpacity>
+                                                        </View>
                                                     </TouchableOpacity>
                                                 ))}
                                             </View>
@@ -131,6 +168,29 @@ const Sidebar = ({ selectedItem, onSelectItem, chatHistory, isLoading, currentVi
                     )}
                 </ScrollView>
             </View>
+
+            {showDeleteModal && (
+                <View className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+                    <View className="bg-white p-8 rounded-xl w-[400px] shadow-xl">
+                        <Text className="text-xl font-medium mb-4">Delete Chat</Text>
+                        <Text className="text-gray-600 mb-8">Are you sure you want to delete this chat?</Text>
+                        <View className="flex-row justify-end gap-4">
+                            <TouchableOpacity
+                                className="px-6 py-3 rounded-lg border border-gray-200"
+                                onPress={() => setShowDeleteModal(false)}
+                            >
+                                <Text className="text-gray-600">Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                className="px-6 py-3 bg-red-500 rounded-lg"
+                                onPress={handleDelete}
+                            >
+                                <Text className="text-white font-medium">Delete</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            )}
         </View>
     );
 };
