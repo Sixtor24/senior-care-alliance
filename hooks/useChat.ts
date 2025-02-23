@@ -34,6 +34,7 @@ export const useChat = (initialThreadId?: string, onChatUpdated?: (message: Mess
                 text,
                 type: 'user',
                 timestamp: new Date(),
+                thread_id: '',
                 role: 'user',
                 content: text,
                 created_at: new Date().toISOString(),
@@ -50,6 +51,7 @@ export const useChat = (initialThreadId?: string, onChatUpdated?: (message: Mess
                     text: response.response,
                     type: 'assistant',
                     timestamp: new Date(),
+                    thread_id: response.thread_id || '',
                     role: 'assistant',
                     content: response.response,
                     created_at: new Date().toISOString(),
@@ -87,7 +89,8 @@ export const useChat = (initialThreadId?: string, onChatUpdated?: (message: Mess
                 message_metadata: msg.message_metadata || {},
                 text: msg.content,
                 type: msg.role as 'user' | 'assistant',
-                timestamp: new Date(msg.created_at)
+                timestamp: new Date(msg.created_at),
+                thread_id: msg.thread_id || '',
             }));
 
             setMessages(formattedMessages);

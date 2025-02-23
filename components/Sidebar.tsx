@@ -4,7 +4,6 @@ import { MaterialIcons, Octicons, Feather } from '@expo/vector-icons';
 import { ChatHistory, Conversation, SidebarProps } from '../types/chat';
 import LoadingSkeleton from './ui/LoadingSkeleton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SimpleLineIcons } from '@expo/vector-icons';
 import chatService from '@/services/chatService';
 
 export type ActiveView = 'chat' | 'portfolio' | 'facility';
@@ -59,13 +58,8 @@ const Sidebar = ({
     const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
 
     const handleConversationClick = async (conversationId: string) => {
-        try {
-            const messages = await chatService.getConversationMessages(conversationId);
-            // Aquí deberías tener una función que actualice el estado del chat
-            onSelectItem(conversationId);
-        } catch (error) {
-            console.error('Error loading conversation:', error);
-        }
+        await loadConversation(conversationId);
+        onSelectItem('chat');
     };
 
     const handleChatSelect = async (chatId: string) => {
@@ -136,7 +130,7 @@ const Sidebar = ({
                                     onSelect={onSelectItem}
                                 />
                             </View>
-                            <View className="w-full gap-5 pt-4">
+                            {/* <View className="w-full gap-5 pt-4">
                                 <Text className="text-[0.7rem] pl-4 py-2 font-light uppercase text-sidebar-gray">
                                     Conversaciones
                                 </Text>
@@ -144,7 +138,7 @@ const Sidebar = ({
                                     <TouchableOpacity 
                                         key={conversation.id}
                                         className="group hover:bg-gray-50 rounded-md px-4 py-1"
-                                        onPress={() => loadConversation(conversation.id)}
+                                        onPress={() => handleConversationClick(conversation.id)}
                                     >
                                         <View className="flex-row justify-between items-center">
                                             <Text className="text-black text-[0.75rem] flex-1">
@@ -156,7 +150,7 @@ const Sidebar = ({
                                         </View>
                                     </TouchableOpacity>
                                 ))}
-                            </View>
+                            </View> */}
                         </View>
                     )}
                 </ScrollView>

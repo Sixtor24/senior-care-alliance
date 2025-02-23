@@ -30,12 +30,14 @@ export interface Message {
     text: string;
     type: 'user' | 'assistant';
     timestamp: Date;
+    thread_id: string;
     bigQueryData?: Array<{
         facility_name: string;
         address: string;
         risk_score: number;
     }>;
 }
+
 export interface DashboardChatProps {
     title?: string;
     placeholder?: string;

@@ -25,6 +25,7 @@ const DashboardSkeleton = () => (
 const Dashboard = ({ isLoading, chatHistory, conversations, onChatUpdated }: DashboardProps) => {
     const [activeView, setActiveView] = useState<ActiveView>('chat');
     const [chatHistoryState, setChatHistory] = useState<ChatHistory>(chatHistory);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
 
     const loadChatHistory = async () => {
         try {
@@ -35,10 +36,21 @@ const Dashboard = ({ isLoading, chatHistory, conversations, onChatUpdated }: Das
         }
     };
 
-    const loadConversation = async (id: string) => {
+    const loadConversation = async (conversationId: string) => {
         try {
-            const messages = await chatService.getConversationMessages(id);
-            // Actualizar el estado de los mensajes aquí
+            const history = await chatService.getConversationMessages(conversationId);
+            setMessages(history.map(msg => ({
+                id: msg.id,
+                text: msg.content,
+                type: msg.role as 'user' | 'assistant',
+                timestamp: new Date(msg.created_at),
+                thread_id: conversationId,
+                role: msg.role,
+                content: msg.content,
+                created_at: msg.created_at,
+                message_metadata: msg.message_metadata
+            })));
+            setActiveView('chat');
         } catch (error) {
             console.error('Error loading conversation:', error);
         }
@@ -48,36 +60,14 @@ const Dashboard = ({ isLoading, chatHistory, conversations, onChatUpdated }: Das
         loadChatHistory();
     }, []);
 
-    const handleSelectItem = (itemId: string) => {
-        switch (itemId) {
-            case 'chat':
-                setActiveView('chat');
-                break;
-            case 'portfolio':
-                setActiveView('portfolio');
-                break;
-            case 'facility':
-                setActiveView('facility');
-                break;
-            // Add other cases as needed
-        }
+    const handleViewChange = (item: string) => {
+        setActiveView(item as ActiveView);
     };
 
     const handleChatUpdate = async () => {
         // Solo actualizar el historial del sidebar
-        loadChatHistory();
+        loadConversation(messages[0].thread_id);
     };
-
-    // Flatten chatHistory to get an array of ChatMessage
-    const messages: ChatMessage[] = chatHistory.flatMap(section => 
-        section.items.map(item => ({
-            id: item.id,
-            text: item.text,
-            type: item.type,
-            timestamp: item.timestamp,
-            thread_id: item.thread_id,
-        }))
-    );
 
     const handleChatSubmit = async (message: string) => {
         const chatMessage: ChatMessage = {
@@ -97,12 +87,12 @@ const Dashboard = ({ isLoading, chatHistory, conversations, onChatUpdated }: Das
                 chatHistory={chatHistory}
                 isLoading={isLoading}
                 selectedItem={activeView}
-                activeView={activeView}
-                onChangeView={setActiveView}
-                onSelectItem={handleSelectItem}
-                currentView={activeView}
+                onSelectItem={handleViewChange}
                 loadConversation={loadConversation}
                 conversations={conversations}
+                currentView={activeView}
+                activeView={activeView}
+                onChangeView={setActiveView}
             />
             <View className="flex-1 bg-background-gray">
                 <ProfileMenu
