@@ -4,19 +4,14 @@ import { View, Text, TextInput, TouchableOpacity, Image, Platform, ScrollView, A
 import { useChat } from '@/hooks/useChat';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-interface DashboardChatProps {
-    title?: string;
-    placeholder?: string;
-    disclaimer?: string;
-    onChatUpdated?: () => void;
-}
+import { NativeSyntheticEvent, TextInputKeyPressEventData } from 'react-native';
+import { DashboardChatProps } from '@/types/chat';
 
 const DashboardChat = ({
     title = "What can we help with?",
     placeholder = "What would you like to know about risk and trends in senior care facilities?",
     disclaimer = "Senior Care Alliance can make mistakes. Check important info.",
-    onChatUpdated
+    onChatUpdated,
 }: DashboardChatProps) => {
     const { messages, sendMessage, isLoading: isSending, error: chatError, loadConversation } = useChat();
     const [inputText, setInputText] = useState('');
@@ -47,6 +42,13 @@ const DashboardChat = ({
         } catch (error) {
             setError('Failed to send message');
             console.error('Chat submission error:', error);
+        }
+    };
+
+    const handleKeyPress = (event: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+        if (event.nativeEvent.key === 'Enter' && !event.nativeEvent.shiftKey) {
+            event.preventDefault(); // Prevent default behavior
+            handleSubmit(); // Call the function to send the message
         }
     };
 
@@ -296,6 +298,7 @@ const DashboardChat = ({
                         numberOfLines={5}
                         value={inputText}
                         onChangeText={setInputText}
+                        onKeyPress={handleKeyPress}
                         style={[Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)]}
                     />
                     <TouchableOpacity

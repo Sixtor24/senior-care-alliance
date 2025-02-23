@@ -1,23 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
 import { MaterialIcons, Octicons, Feather } from '@expo/vector-icons';
-import { ChatHistory } from '../types/chat';
+import { ChatHistory, Conversation, SidebarProps } from '../types/chat';
 import LoadingSkeleton from './ui/LoadingSkeleton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SimpleLineIcons } from '@expo/vector-icons';
 import chatService from '@/services/chatService';
 
 export type ActiveView = 'chat' | 'portfolio' | 'facility';
-
-interface SidebarProps {
-    selectedItem: string;
-    onSelectItem: (item: string) => void;
-    chatHistory: ChatHistory;
-    isLoading: boolean;
-    currentView: 'chat' | 'portfolio' | 'facility';
-    activeView: ActiveView;
-    onChangeView: (view: ActiveView) => void;
-}
 
 const SidebarSkeleton = () => (
     <View className="p-3 gap-5">
@@ -54,9 +44,29 @@ const SidebarSkeleton = () => (
     </View>
 );
 
-const Sidebar = ({ selectedItem, onSelectItem, chatHistory, isLoading, currentView, activeView, onChangeView }: SidebarProps) => {
+const Sidebar = ({ 
+    selectedItem, 
+    onSelectItem, 
+    chatHistory, 
+    isLoading, 
+    currentView, 
+    activeView,
+    onChangeView,
+    loadConversation,
+    conversations 
+}: SidebarProps) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+
+    const handleConversationClick = async (conversationId: string) => {
+        try {
+            const messages = await chatService.getConversationMessages(conversationId);
+            // Aquí deberías tener una función que actualice el estado del chat
+            onSelectItem(conversationId);
+        } catch (error) {
+            console.error('Error loading conversation:', error);
+        }
+    };
 
     const handleChatSelect = async (chatId: string) => {
         await AsyncStorage.setItem('selectedChatId', chatId);
@@ -127,42 +137,25 @@ const Sidebar = ({ selectedItem, onSelectItem, chatHistory, isLoading, currentVi
                                 />
                             </View>
                             <View className="w-full gap-5 pt-4">
-                                {activeView === 'chat' && (
-                                    isLoading ? (
-                                        <Text>Loading...</Text>
-                                    ) : (
-                                        chatHistory.map((section) => (
-                                            <View key={section.title} className="w-full gap-1">
-                                                <Text className="text-[0.7rem] pl-4 py-2 font-light uppercase text-sidebar-gray">
-                                                    {section.title}
-                                                </Text>
-                                                {section.items.map((item) => (
-                                                    <TouchableOpacity 
-                                                        key={item.id}
-                                                        className={`group hover:bg-gray-50 rounded-md px-4 py-1 ${
-                                                            selectedItem === item.id ? 'bg-gray-100' : 'bg-white'
-                                                        }`}
-                                                        onPress={() => handleChatSelect(item.id)}
-                                                    >
-                                                        <View className="flex-row justify-between items-center">
-                                                            <Text className="text-black text-[0.75rem] flex-1">{item.text}</Text>
-                                                            <TouchableOpacity
-                                                                className="invisible group-hover:visible p-2"
-                                                                onPress={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setSelectedThreadId(item.thread_id);
-                                                                    setShowDeleteModal(true);
-                                                                }}
-                                                            >
-                                                                <SimpleLineIcons name="options" size={16} color="#878B99" />
-                                                            </TouchableOpacity>
-                                                        </View>
-                                                    </TouchableOpacity>
-                                                ))}
-                                            </View>
-                                        ))
-                                    )
-                                )}
+                                <Text className="text-[0.7rem] pl-4 py-2 font-light uppercase text-sidebar-gray">
+                                    Conversaciones
+                                </Text>
+                                {conversations.map((conversation) => (
+                                    <TouchableOpacity 
+                                        key={conversation.id}
+                                        className="group hover:bg-gray-50 rounded-md px-4 py-1"
+                                        onPress={() => loadConversation(conversation.id)}
+                                    >
+                                        <View className="flex-row justify-between items-center">
+                                            <Text className="text-black text-[0.75rem] flex-1">
+                                                {conversation.title || `Chat ${conversation.id.slice(0, 8)}`}
+                                            </Text>
+                                            <Text className="text-xs text-gray-500">
+                                                {new Date(conversation.created_at).toLocaleDateString()}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
                             </View>
                         </View>
                     )}

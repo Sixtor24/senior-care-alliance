@@ -7,15 +7,9 @@ import DashboardPortfolio from './DashboartPortfolio';
 import Sidebar, { ActiveView } from '../Sidebar';
 import ProfileMenu from '../ProfileMenu';
 import { profileData, menuItems } from '../../data/profileData';
-import { ChatHistory, ChatMessage } from '../../types/chat';
+import { ChatHistory, ChatMessage, DashboardProps } from '../../types/chat';
 import DashboardFacility from './DashboardFacility';
 import chatService from '@/services/chatService';
-
-interface DashboardProps {
-    isLoading: boolean;
-    chatHistory: ChatHistory;
-    onChatUpdated: (newMessage: ChatMessage) => Promise<void>;
-}
 
 const DashboardSkeleton = () => (
     <View className="w-full space-y-6 p-4">
@@ -28,7 +22,7 @@ const DashboardSkeleton = () => (
     </View>
 );
 
-const Dashboard = ({ isLoading, chatHistory, onChatUpdated }: DashboardProps) => {
+const Dashboard = ({ isLoading, chatHistory, conversations, onChatUpdated }: DashboardProps) => {
     const [activeView, setActiveView] = useState<ActiveView>('chat');
     const [chatHistoryState, setChatHistory] = useState<ChatHistory>(chatHistory);
 
@@ -38,6 +32,15 @@ const Dashboard = ({ isLoading, chatHistory, onChatUpdated }: DashboardProps) =>
             setChatHistory(history);
         } catch (error) {
             console.error('Error loading chat history:', error);
+        }
+    };
+
+    const loadConversation = async (id: string) => {
+        try {
+            const messages = await chatService.getConversationMessages(id);
+            // Actualizar el estado de los mensajes aquí
+        } catch (error) {
+            console.error('Error loading conversation:', error);
         }
     };
 
@@ -65,6 +68,29 @@ const Dashboard = ({ isLoading, chatHistory, onChatUpdated }: DashboardProps) =>
         loadChatHistory();
     };
 
+    // Flatten chatHistory to get an array of ChatMessage
+    const messages: ChatMessage[] = chatHistory.flatMap(section => 
+        section.items.map(item => ({
+            id: item.id,
+            text: item.text,
+            type: item.type,
+            timestamp: item.timestamp,
+            thread_id: item.thread_id,
+        }))
+    );
+
+    const handleChatSubmit = async (message: string) => {
+        const chatMessage: ChatMessage = {
+            id: Date.now().toString(),
+            text: message,
+            type: 'user',
+            timestamp: new Date(),
+            thread_id: '', // Set the thread_id as needed
+        };
+
+        await onChatUpdated(chatMessage);
+    };
+
     return (
         <View className="flex-1 flex-row">
             <Sidebar
@@ -75,6 +101,8 @@ const Dashboard = ({ isLoading, chatHistory, onChatUpdated }: DashboardProps) =>
                 onChangeView={setActiveView}
                 onSelectItem={handleSelectItem}
                 currentView={activeView}
+                loadConversation={loadConversation}
+                conversations={conversations}
             />
             <View className="flex-1 bg-background-gray">
                 <ProfileMenu
@@ -102,6 +130,10 @@ const Dashboard = ({ isLoading, chatHistory, onChatUpdated }: DashboardProps) =>
                                 >
                                     <DashboardChat 
                                         title={'What can we help with?'}
+                                        messages={messages}
+                                        onSendMessage={handleChatSubmit}
+                                        isLoading={isLoading}
+                                        error={null}
                                         onChatUpdated={handleChatUpdate}
                                     />
                                 </Animated.View>
