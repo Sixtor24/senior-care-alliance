@@ -20,9 +20,10 @@ export interface SidebarProps {
     currentView: 'chat' | 'portfolio' | 'facility';
     activeView: ActiveView;
     onChangeView: (view: ActiveView) => void;
-    loadConversation: (id: string) => void;
+    loadConversation: (id: string) => Promise<void>;
     conversations?: Conversation[];
     onRefreshConversations?: () => Promise<void>;
+    onSelectThread: (threadId: string) => void;
 }
 
 export interface Message {
@@ -42,7 +43,8 @@ export interface DashboardChatProps {
     messages?: ChatMessage[];
     onSendMessage?: (message: string) => Promise<void>;
     isLoading?: boolean;
-    error?: string | null;       
+    error?: string | null;
+    loadConversation?: (loader: (id: string) => Promise<void>) => void;
 }
 
 export interface DashboardProps {

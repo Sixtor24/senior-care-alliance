@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, RefObject } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
 import { MaterialIcons, Octicons, Feather } from '@expo/vector-icons';
 import { Conversation, SidebarProps } from '../types/chat';
 import LoadingSkeleton from './ui/LoadingSkeleton';
-import chatService from '@/services/chatService';
 import axios from 'axios';
 
 export type ActiveView = 'chat' | 'portfolio' | 'facility';
@@ -56,13 +55,14 @@ const ConversationSkeleton = () => (
     </View>
 );
 
-const Sidebar = ({ 
+const Sidebar = forwardRef<View, SidebarProps>(({ 
     selectedItem, 
     onSelectItem, 
     isLoading: externalLoading, 
     onChangeView,
-    loadConversation
-}: Omit<SidebarProps, 'conversations'>, ref: React.Ref<unknown> | undefined) => {
+    loadConversation,
+    onSelectThread
+}, ref) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
     const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -73,9 +73,16 @@ const Sidebar = ({
         try {
             setIsLoading(true);
             const response = await axios.get(`${API_URL}/conversations`, {
-                params: { sort: 'created_at:desc', limit: 20 }
+                params: { 
+                    sort: 'created_at:desc', 
+                    limit: 10,
+                    offset: 0,
+                    type: 'general',
+                    status: 'active'
+                }
             });
             
+            console.log('Loaded conversations:', response.data);
             setConversations(response.data);
             await loadTitlesForConversations(response.data);
         } catch (error) {
@@ -115,16 +122,20 @@ const Sidebar = ({
         loadConversations();
     }, []);
 
-    // Exponer método de recarga para uso externo
-    useImperativeHandle(ref, () => ({
-        reloadConversations: loadConversations
-    }));
-
     const handleConversationClick = async (conversationId: string) => {
         try {
             console.log('Loading conversation:', conversationId);
+            
+            // Realizar una solicitud para obtener los mensajes de la conversación
+            const response = await axios.get(`${API_URL}/conversations/${conversationId}/messages`);
+            
+            // Imprimir los mensajes en la consola
+            console.log('Conversation messages:', response.data);
+            
+            // Llamar a la función para cargar la conversación
             await loadConversation(conversationId);
             onSelectItem('chat');
+            
             // Recargar conversaciones después de seleccionar una
             loadConversations();
         } catch (error) {
@@ -132,25 +143,10 @@ const Sidebar = ({
         }
     };
 
-    // const handleDelete = async () => {
-    //     if (selectedThreadId) {
-    //         try {
-    //             const currentHistory = await chatService.loadChatHistory();
-    //             const updatedHistory = currentHistory.map(section => ({
-    //                 ...section,
-    //                 items: section.items.filter(item => item.thread_id !== selectedThreadId)
-    //             })).filter(section => section.items.length > 0);
-
-    //             await chatService.saveChatHistory(updatedHistory);
-    //             setShowDeleteModal(false);
-    //             if (onChangeView) {
-    //                 onChangeView('chat');
-    //             }
-    //         } catch (error) {
-    //             console.error('Error deleting chat:', error);
-    //         }
-    //     }
-    // };
+    const handleLabelClick = (conversationId: string) => {
+        console.log('Label clicked, loading conversation:', conversationId);
+        onSelectThread(conversationId);
+    };
 
     const groupConversationsByDate = (conversations: Conversation[]) => {
         const groups: { [key: string]: Conversation[] } = {};
@@ -185,7 +181,7 @@ const Sidebar = ({
     };
 
     return (
-        <View className="w-80 md:w-72 lg:w-64 xl:w-1/6 h-full z-10">
+        <View ref={ref as RefObject<View>} className="w-80 md:w-72 lg:w-64 xl:w-1/6 h-full z-10">
             <View
                 style={{
                     shadowOffset: { width: 1, height: 0 },
@@ -238,7 +234,7 @@ const Sidebar = ({
                                             <TouchableOpacity 
                                                 key={conversation.id}
                                                 className="group hover:bg-gray-50 rounded-md px-4 py-2"
-                                                onPress={() => handleConversationClick(conversation.id)}
+                                                onPress={() => handleLabelClick(conversation.id)}
                                             >
                                                 {conversationTitles[conversation.id] ? (
                                                     <View className="flex-row justify-between items-center">
@@ -261,32 +257,9 @@ const Sidebar = ({
                     )}
                 </ScrollView>
             </View>
-
-            {/* {showDeleteModal && (
-                <View className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-                    <View className="bg-white p-8 rounded-xl w-[400px] shadow-xl">
-                        <Text className="text-xl font-medium mb-4">Delete Chat</Text>
-                        <Text className="text-gray-600 mb-8">Are you sure you want to delete this chat?</Text>
-                        <View className="flex-row justify-end gap-4">
-                            <TouchableOpacity
-                                className="px-6 py-3 rounded-lg border border-gray-200"
-                                onPress={() => setShowDeleteModal(false)}
-                            >
-                                <Text className="text-gray-600">Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                className="px-6 py-3 bg-red-500 rounded-lg"
-                                onPress={handleDelete}
-                            >
-                                <Text className="text-white font-medium">Delete</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            )} */}
         </View>
     );
-};
+});
 
 interface MenuItemProps {
     id: string;
@@ -318,4 +291,4 @@ const MenuItem = ({ id, icon, label, selectedItem, onSelect }: MenuItemProps) =>
     </TouchableOpacity>
 );
 
-export default forwardRef(Sidebar);
+export default Sidebar;

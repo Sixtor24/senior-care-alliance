@@ -23,6 +23,7 @@ const DashboardSkeleton = () => (
 
 const Dashboard = ({ isLoading = false }: Omit<DashboardProps, 'conversations'>) => {
     const [activeView, setActiveView] = useState<ActiveView>('chat');
+    const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
 
     const handleSelectItem = (item: string) => {
         setActiveView(item as ActiveView);
@@ -30,6 +31,11 @@ const Dashboard = ({ isLoading = false }: Omit<DashboardProps, 'conversations'>)
 
     const handleLoadConversation = async (id: string) => {
         console.log('Loading conversation:', id);
+    };
+
+    const handleSelectThread = (threadId: string) => {
+        setSelectedThreadId(threadId);
+        setActiveView('chat'); // Ensure the chat view is active
     };
 
     return (
@@ -43,6 +49,7 @@ const Dashboard = ({ isLoading = false }: Omit<DashboardProps, 'conversations'>)
                 conversations={[]}
                 activeView={activeView}
                 onChangeView={setActiveView}
+                onSelectThread={handleSelectThread}
             />
             <View className="flex-1 bg-background-gray">
                 <ProfileMenu
@@ -72,6 +79,7 @@ const Dashboard = ({ isLoading = false }: Omit<DashboardProps, 'conversations'>)
                                         title={'What can we help with?'}
                                         isLoading={isLoading}
                                         error={null}
+                                        threadId={selectedThreadId || undefined}
                                     />
                                 </Animated.View>
                             )}

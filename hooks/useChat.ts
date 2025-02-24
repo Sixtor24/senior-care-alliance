@@ -71,6 +71,7 @@ export const useChat = () => {
 
     return {
         messages,
+        setMessages,
         isLoading,
         error,
         sendMessage,

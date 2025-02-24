@@ -4,9 +4,10 @@ import SortIcon from './SortIcon'
 
 interface AssistanceMessageProps {
     message: any;
+    threadId?: string;
 }
 
-const AssistanceMessage = ({ message }: AssistanceMessageProps) => {
+const AssistanceMessage = ({ message, threadId }: AssistanceMessageProps) => {
     const hasStructuredData = (message: any) => {
         return message?.bigQueryData &&
             (Array.isArray(message.bigQueryData) ||
@@ -136,7 +137,7 @@ const AssistanceMessage = ({ message }: AssistanceMessageProps) => {
         );
     };
 
-    console.log('Mostrar mensaje:', message.text, message.bigQueryData);
+    console.log('Mostrar mensaje:', message.text, message.bigQueryData, 'Thread ID:', threadId);
     return (
         <View>
             <View className='mb-6'>

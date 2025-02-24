@@ -4,8 +4,11 @@ import { View, Text, TextInput, TouchableOpacity, Image, Platform, ScrollView, A
 import { useChat } from '@/hooks/useChat';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { NativeSyntheticEvent, TextInputKeyPressEventData } from 'react-native';
-import { DashboardChatProps } from '@/types/chat';
+import { DashboardChatProps, Message } from '@/types/chat';
 import AssistanceMessage from '../ui/AssistanceMessage';
+import axios from 'axios';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sca-api-535434239234.us-central1.run.app';
 
 const { height } = Dimensions.get('window');
 const maxHeight = height * 0.65;
@@ -15,11 +18,67 @@ const DashboardChat = ({
     placeholder = "What would you like to know about risk and trends in senior care facilities?",
     disclaimer = "Senior Care Alliance can make mistakes. Check important info.",
     onChatUpdated,
-}: DashboardChatProps) => {
-    const { messages, sendMessage, isLoading: isSending, } = useChat();
+    loadConversation,
+    isLoading,
+    error: errorProp,
+    threadId,
+}: DashboardChatProps & { threadId?: string }) => {
+    const { messages, sendMessage, isLoading: isSending, setMessages } = useChat();
     const [inputText, setInputText] = useState('');
     const [error, setError] = useState('');
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
+
+    console.log('DashboardChat Props:', {
+        title,
+        isLoading,
+        error,
+        messagesCount: messages?.length,
+        messages,
+        hasLoadConversation: !!loadConversation
+    });
+
+    useEffect(() => {
+        if (threadId) {
+            loadConversationMessages(threadId);
+        }
+    }, [threadId]);  // Add threadId to dependencies
+
+    const loadConversationMessages = async (conversationId: string) => {
+        console.log('Starting to load messages for conversation:', conversationId);
+        setIsLoadingHistory(true);
+        try {
+            const messagesResponse = await axios.get(`${API_URL}/conversations/${conversationId}/messages`);
+            console.log('Messages Response:', messagesResponse.data);
+            
+            if (!messagesResponse.data || !Array.isArray(messagesResponse.data)) {
+                console.error('Invalid messages data:', messagesResponse.data);
+                return;
+            }
+            
+            const formattedMessages = messagesResponse.data.map((msg: any) => ({
+                id: msg.id,
+                text: msg.content,
+                type: msg.role === 'user' ? 'user' : 'assistant',
+                timestamp: new Date(msg.created_at),
+                thread_id: conversationId,
+                bigQueryData: msg.message_metadata?.bigquery_data || null,
+                role: msg.role,
+                content: msg.content,
+                created_at: msg.created_at,
+                message_metadata: msg.message_metadata
+            }));
+            
+            console.log('Setting formatted messages:', formattedMessages);
+            setMessages(formattedMessages as Message[]);
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+        } catch (error) {
+            console.error('Error loading conversation:', error);
+            setError('Failed to load conversation');
+        } finally {
+            setIsLoadingHistory(false);
+        }
+    };
 
     const handleSubmit = async () => {
         if (!inputText.trim() || isSending) return;
@@ -47,8 +106,7 @@ const DashboardChat = ({
     };
 
 
-    const renderMessage = (message: any) => {
-
+    const renderMessage = (message: any, threadId: string) => {
         return (
             <View
                 key={message.id}
@@ -65,7 +123,7 @@ const DashboardChat = ({
                             {message.text}
                         </Text>
                     ) : (
-                        <AssistanceMessage message={message} />
+                        <AssistanceMessage message={message} threadId={threadId} />
                     )}
                 </View>
                 {message.type === 'user' && (
@@ -85,7 +143,12 @@ const DashboardChat = ({
         <View className={`flex flex-col h-full ${messages.length === 0 ? 'justify-center top-48 gap-10' : ''}`}>
             {/* Chat Messages Area */}
             <View className={`${messages.length === 0 ? 'flex items-center justify-center' : 'flex-1 overflow-hidden'}`}>
-                {messages.length === 0 ? (
+                {isLoadingHistory ? (
+                    <View className="flex-1 items-center justify-center">
+                        <ActivityIndicator size="large" color="#0000ff" />
+                        <Text className="mt-2">Loading conversation...</Text>
+                    </View>
+                ) : messages.length === 0 ? (
                     <Text className="text-2xl md:text-3xl lg:text-4xl font-extralight text-dark-blue text-center">
                         {title}
                     </Text>
@@ -101,7 +164,7 @@ const DashboardChat = ({
                             className="flex-row items-start mb-4"
                         >
                             <View className='gap-6 px-12 w-full'>
-                                {messages.map(renderMessage)}
+                                {messages.map((message) => renderMessage(message, threadId || ''))}
                             </View>
                         </Animated.View>
                     </ScrollView>
