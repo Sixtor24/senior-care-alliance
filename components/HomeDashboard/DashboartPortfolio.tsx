@@ -436,6 +436,31 @@ const Portfolio = () => {
                         </TouchableOpacity>
                     </View>
 
+                    <View className="flex-row items-center justify-between mb-6">
+                        <Text className="text-[32px] font-extralight text-dark-blue">Portfolio</Text>
+                        
+                        <View className="flex-row items-center flex-1 max-w-[450px] ml-8">
+                            <View className="flex-row items-center bg-white rounded-lg px-3 py-2 flex-1 mr-4 border border-gray-300">
+                                <AntDesign name="search1" size={22} color="#C5C5C5" />
+                                <TextInput
+                                    placeholder="Search for facility"
+                                    className="ml-2 flex-1 h-6 text-[14px] text-gray-900"
+                                    value={searchQuery}
+                                    onChangeText={handleSearchInput}
+                                    style={[Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)]}
+                                    placeholderTextColor="#667085"
+                                />
+                            </View>
+                            <TouchableOpacity 
+                                className="bg-dark-blue px-6 py-3.5 gap-1 rounded-full flex-row items-center"
+                                onPress={handleOpenModal}
+                            >
+                                <Text className="text-white text-[14px] font-medium">Add facilities</Text>
+                                <FontAwesome6 name="angle-right" size={13} color="white" />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
                     <ScrollView className="max-h-[400px]">
                         {availableFacilities.map((facility) => (
                             <View 

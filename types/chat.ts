@@ -31,11 +31,7 @@ export interface Message {
     type: 'user' | 'assistant';
     timestamp: Date;
     thread_id: string;
-    bigQueryData?: Array<{
-        facility_name: string;
-        address: string;
-        risk_score: number;
-    }>;
+    bigQueryData?: Array<Record<string, any>>;
 }
 
 export interface DashboardChatProps {

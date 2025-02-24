@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import chatService from '@/services/chatService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Message } from '@/types/chat';
 
 export const useChat = () => {
@@ -45,6 +44,7 @@ export const useChat = () => {
                     text: response.response,
                     type: 'assistant',
                     timestamp: new Date(),
+                    bigQueryData: response.bigquery_data,
                     thread_id: response.thread_id,
                     role: 'assistant',
                     content: response.response,

@@ -60,6 +60,7 @@ class ChatService {
 
             if (response.status === 200 && response.data) {
                 if (response.data.bigquery_data) {
+                    console.log('response: ', response.data.response);
                     console.log('BigQuery Data:', response.data.bigquery_data);
                 } else {
                     console.log('No BigQuery Data received.');

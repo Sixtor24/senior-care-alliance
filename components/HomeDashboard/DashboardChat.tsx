@@ -5,6 +5,7 @@ import { useChat } from '@/hooks/useChat';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { NativeSyntheticEvent, TextInputKeyPressEventData } from 'react-native';
 import { DashboardChatProps } from '@/types/chat';
+import AssistanceMessage from '../ui/AssistanceMessage';
 
 const { height } = Dimensions.get('window');
 const maxHeight = height * 0.65;
@@ -45,178 +46,8 @@ const DashboardChat = ({
         }
     };
 
-    const hasStructuredData = (message: any) => {
-        return message.bigquery_data && 
-               (Array.isArray(message.bigquery_data) || 
-                typeof message.bigquery_data === 'object');
-    };
 
     const renderMessage = (message: any) => {
-        // Helper function to render dynamic table
-        const renderDynamicTable = (data: any) => {
-            if (Array.isArray(data)) {
-                // Manejo de arrays (múltiples registros)
-                const headers = Object.keys(data[0] || {});
-                return (
-                    <View className="mt-4 mb-4">
-                        {/* Main Container */}
-                        <View className="border-2 border-gray-200 rounded-xl overflow-hidden bg-white shadow-md">
-                            {/* Scrollable Container */}
-                            <ScrollView 
-                                horizontal={true}
-                                showsHorizontalScrollIndicator={true}
-                                className="flex-1"
-                            >
-                                <View className="min-w-full">
-                                    {/* Headers Section */}
-                                    <View className="sticky top-0 z-10 border-b-2 border-gray-200">
-                                        <View className="flex-row bg-[#f1f5f9]">
-                                            {headers.map((header, index) => (
-                                                <View 
-                                                    key={index}
-                                                    className={`flex-1 min-w-[150px] ${
-                                                        header.toLowerCase().includes('nombre') || 
-                                                        header.toLowerCase().includes('name') ? 'min-w-[250px]' : ''
-                                                    } ${
-                                                        header.toLowerCase().includes('dirección') || 
-                                                        header.toLowerCase().includes('address') ? 'min-w-[200px]' : ''
-                                                    }`}
-                                                >
-                                                    <Text 
-                                                        className="px-6 py-4 font-bold text-[13px] text-gray-700 capitalize border-r border-gray-300"
-                                                        style={{
-                                                            textAlign: typeof data[0][header] === 'number' ? 'right' : 'left'
-                                                        }}
-                                                    >
-                                                        {header.replace(/_/g, ' ')}
-                                                    </Text>
-                                                </View>
-                                            ))}
-                                        </View>
-                                    </View>
-
-                                    {/* Table Body */}
-                                    <View className="bg-white">
-                                        {data.map((item, rowIndex) => (
-                                            <View 
-                                                key={rowIndex}
-                                                className={`flex-row ${
-                                                    rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                                                } hover:bg-gray-100`}
-                                            >
-                                                {headers.map((header, colIndex) => (
-                                                    <View 
-                                                        key={colIndex}
-                                                        className={`flex-1 min-w-[150px] ${
-                                                            header.toLowerCase().includes('nombre') || 
-                                                            header.toLowerCase().includes('name') ? 'min-w-[250px]' : ''
-                                                        } ${
-                                                            header.toLowerCase().includes('dirección') || 
-                                                            header.toLowerCase().includes('address') ? 'min-w-[200px]' : ''
-                                                        }`}
-                                                    >
-                                                        <Text 
-                                                            className={`px-6 py-4 text-[13px] ${
-                                                                typeof item[header] === 'number' 
-                                                                    ? 'text-right font-medium text-gray-700'
-                                                                    : 'text-gray-600'
-                                                            } border-r border-gray-200 border-b`}
-                                                        >
-                                                            {typeof item[header] === 'object' 
-                                                                ? JSON.stringify(item[header])
-                                                                : String(item[header])}
-                                                        </Text>
-                                                    </View>
-                                                ))}
-                                            </View>
-                                        ))}
-                                    </View>
-                                </View>
-                            </ScrollView>
-                        </View>
-
-                        {/* Table Footer */}
-                        <View className="mt-2 px-2 flex-row justify-between items-center">
-                            <Text className="text-[11px] text-gray-500 italic">
-                                Total registros: {data.length}
-                            </Text>
-                            <Text className="text-[11px] text-gray-500">
-                                Desliza horizontalmente para ver más información →
-                            </Text>
-                        </View>
-                    </View>
-                );
-            } else {
-                // Handle single object with improved styling
-                return (
-                    <View className="mt-4 mb-4">
-                        <View className="border-2 border-gray-200 rounded-xl overflow-hidden bg-white shadow-md">
-                            {Object.entries(data).map(([key, value], index) => (
-                                <View 
-                                    key={index}
-                                    className={`flex-row ${
-                                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                                    } ${
-                                        index < Object.entries(data).length - 1 ? 'border-b border-gray-200' : ''
-                                    }`}
-                                >
-                                    <Text className="w-1/3 px-6 py-4 bg-[#f8fafc] text-[13px] font-semibold text-gray-700 capitalize border-r border-gray-200">
-                                        {key.replace(/_/g, ' ')}
-                                    </Text>
-                                    <Text className="w-2/3 px-6 py-4 text-[13px] text-gray-600">
-                                        {typeof value === 'object' 
-                                            ? JSON.stringify(value)
-                                            : String(value)}
-                                    </Text>
-                                </View>
-                            ))}
-                        </View>
-                    </View>
-                );
-            }
-        };
-
-        // Helper function to format markdown-style content with table support
-        const formatMarkdownContent = (text: string, messageData: any) => {
-            return (
-                <View className="gap-4">
-                    {text.split('\n').map((section, index) => {
-                        if (section.startsWith('### ')) {
-                            return (
-                                <View key={index} className="gap-2">
-                                    <Text className="text-lg font-semibold text-dark-blue">
-                                        {section.replace('### ', '')}
-                                    </Text>
-                                    {/* Render table only if structured data exists */}
-                                    {hasStructuredData(messageData) &&
-                                        renderDynamicTable(messageData.bigquery_data)}
-                                </View>
-                            );
-                        } else if (section.includes('**')) {
-                            const parts = section.split('**');
-                            return (
-                                <Text key={index} className="text-[14px] font-light">
-                                    {parts.map((part, partIndex) => (
-                                        <Text
-                                            key={partIndex}
-                                            className={partIndex % 2 === 1 ? "font-bold" : "font-light"}
-                                        >
-                                            {part}
-                                        </Text>
-                                    ))}
-                                </Text>
-                            );
-                        } else {
-                            return (
-                                <Text key={index} className="text-[14px] font-light">
-                                    {section}
-                                </Text>
-                            );
-                        }
-                    })}
-                </View>
-            );
-        };
 
         return (
             <View
@@ -226,7 +57,7 @@ const DashboardChat = ({
                 <View
                     className={`rounded-2xl p-4 ${message.type === 'user'
                             ? 'bg-dark-blue max-w-[650px]'
-                            : 'bg-gray-200 border border-gray-200 max-w-[550px]'
+                            : 'bg-gray-200 border border-gray-200 max-w-[750px]'
                         }`}
                 >
                     {message.type === 'user' ? (
@@ -234,7 +65,7 @@ const DashboardChat = ({
                             {message.text}
                         </Text>
                     ) : (
-                        formatMarkdownContent(message.text, message)
+                        <AssistanceMessage message={message} />
                     )}
                 </View>
                 {message.type === 'user' && (
