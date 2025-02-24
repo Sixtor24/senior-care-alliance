@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
 import { MaterialIcons, Octicons, Feather } from '@expo/vector-icons';
-import { ChatHistory, Conversation, SidebarProps } from '../types/chat';
+import { Conversation, SidebarProps } from '../types/chat';
 import LoadingSkeleton from './ui/LoadingSkeleton';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import chatService from '@/services/chatService';
+import axios from 'axios';
 
 export type ActiveView = 'chat' | 'portfolio' | 'facility';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sca-api-535434239234.us-central1.run.app';
 
 const SidebarSkeleton = () => (
     <View className="p-3 gap-5">
@@ -43,48 +45,143 @@ const SidebarSkeleton = () => (
     </View>
 );
 
+const ConversationSkeleton = () => (
+    <View className="w-full flex-row justify-between items-center">
+        <View className="flex-1 mr-2">
+            <View 
+                className="h-4 bg-gray-300 dark:bg-gray-200 rounded-md animate-pulse" 
+                style={{ opacity: 0.7 }}
+            />
+        </View>
+    </View>
+);
+
 const Sidebar = ({ 
     selectedItem, 
     onSelectItem, 
-    chatHistory, 
-    isLoading, 
-    currentView, 
-    activeView,
+    isLoading: externalLoading, 
     onChangeView,
-    loadConversation,
-    conversations 
-}: SidebarProps) => {
+    loadConversation
+}: Omit<SidebarProps, 'conversations'>, ref: React.Ref<unknown> | undefined) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+    const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [conversationTitles, setConversationTitles] = useState<{[key: string]: string}>({});
+    const [isLoading, setIsLoading] = useState(externalLoading);
 
-    const handleConversationClick = async (conversationId: string) => {
-        await loadConversation(conversationId);
-        onSelectItem('chat');
+    const loadConversations = async () => {
+        try {
+            setIsLoading(true);
+            const response = await axios.get(`${API_URL}/conversations`, {
+                params: { sort: 'created_at:desc', limit: 20 }
+            });
+            
+            setConversations(response.data);
+            await loadTitlesForConversations(response.data);
+        } catch (error) {
+            console.error('Error loading conversations:', error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleChatSelect = async (chatId: string) => {
-        await AsyncStorage.setItem('selectedChatId', chatId);
-        onSelectItem(chatId);
-    };
-
-    const handleDelete = async () => {
-        if (selectedThreadId) {
-            try {
-                const currentHistory = await chatService.loadChatHistory();
-                const updatedHistory = currentHistory.map(section => ({
-                    ...section,
-                    items: section.items.filter(item => item.thread_id !== selectedThreadId)
-                })).filter(section => section.items.length > 0);
-
-                await chatService.saveChatHistory(updatedHistory);
-                setShowDeleteModal(false);
-                if (onChangeView) {
-                    onChangeView('chat');
+    const loadTitlesForConversations = async (conversations: Conversation[]) => {
+        const newTitles: {[key: string]: string} = {};
+        for (const conversation of conversations.slice(0, 10)) {
+            if (!conversationTitles[conversation.id]) {
+                try {
+                    const messagesResponse = await axios.get(
+                        `${API_URL}/conversations/${conversation.id}/messages?limit=1&offset=0`
+                    );
+                    const firstUserMessage = messagesResponse.data.find(
+                        (msg: { role: string; }) => msg.role === 'user'
+                    );
+                    if (firstUserMessage) {
+                        newTitles[conversation.id] = firstUserMessage.content;
+                    }
+                } catch (error) {
+                    console.error('Error loading conversation title:', error);
                 }
-            } catch (error) {
-                console.error('Error deleting chat:', error);
             }
         }
+        
+        if (Object.keys(newTitles).length > 0) {
+            setConversationTitles(prev => ({...prev, ...newTitles}));
+        }
+    };
+
+    // Solo cargar al inicio
+    useEffect(() => {
+        loadConversations();
+    }, []);
+
+    // Exponer método de recarga para uso externo
+    useImperativeHandle(ref, () => ({
+        reloadConversations: loadConversations
+    }));
+
+    const handleConversationClick = async (conversationId: string) => {
+        try {
+            console.log('Loading conversation:', conversationId);
+            await loadConversation(conversationId);
+            onSelectItem('chat');
+            // Recargar conversaciones después de seleccionar una
+            loadConversations();
+        } catch (error) {
+            console.error('Error loading conversation:', error);
+        }
+    };
+
+    // const handleDelete = async () => {
+    //     if (selectedThreadId) {
+    //         try {
+    //             const currentHistory = await chatService.loadChatHistory();
+    //             const updatedHistory = currentHistory.map(section => ({
+    //                 ...section,
+    //                 items: section.items.filter(item => item.thread_id !== selectedThreadId)
+    //             })).filter(section => section.items.length > 0);
+
+    //             await chatService.saveChatHistory(updatedHistory);
+    //             setShowDeleteModal(false);
+    //             if (onChangeView) {
+    //                 onChangeView('chat');
+    //             }
+    //         } catch (error) {
+    //             console.error('Error deleting chat:', error);
+    //         }
+    //     }
+    // };
+
+    const groupConversationsByDate = (conversations: Conversation[]) => {
+        const groups: { [key: string]: Conversation[] } = {};
+        
+        conversations.slice(0, 10).forEach(conversation => {
+            const date = new Date(conversation.created_at);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            let groupKey = '';
+            
+            if (date.toDateString() === today.toDateString()) {
+                groupKey = 'Today';
+            } else if (date.toDateString() === yesterday.toDateString()) {
+                groupKey = 'Yesterday';
+            } else if (date.getTime() > today.getTime() - 7 * 24 * 60 * 60 * 1000) {
+                groupKey = 'This Week';
+            } else if (date.getMonth() === today.getMonth()) {
+                groupKey = 'This Month';
+            } else {
+                groupKey = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            }
+            
+            if (!groups[groupKey]) {
+                groups[groupKey] = [];
+            }
+            groups[groupKey].push(conversation);
+        });
+        
+        return groups;
     };
 
     return (
@@ -130,33 +227,42 @@ const Sidebar = ({
                                     onSelect={onSelectItem}
                                 />
                             </View>
-                            {/* <View className="w-full gap-5 pt-4">
-                                <Text className="text-[0.7rem] pl-4 py-2 font-light uppercase text-sidebar-gray">
-                                    Conversaciones
-                                </Text>
-                                {conversations.map((conversation) => (
-                                    <TouchableOpacity 
-                                        key={conversation.id}
-                                        className="group hover:bg-gray-50 rounded-md px-4 py-1"
-                                        onPress={() => handleConversationClick(conversation.id)}
-                                    >
-                                        <View className="flex-row justify-between items-center">
-                                            <Text className="text-black text-[0.75rem] flex-1">
-                                                {conversation.title || `Chat ${conversation.id.slice(0, 8)}`}
-                                            </Text>
-                                            <Text className="text-xs text-gray-500">
-                                                {new Date(conversation.created_at).toLocaleDateString()}
-                                            </Text>
+                            <View className="w-full gap-5 pt-4">
+                                {Object.entries(groupConversationsByDate(conversations)).map(([dateGroup, groupConversations]) => (
+                                    <View key={dateGroup}>
+                                        <Text className="text-[0.7rem] pl-4 py-2 font-light uppercase text-sidebar-gray">
+                                            {dateGroup}
+                                        </Text>
+                                        <View className='flex-col gap-2'>
+                                        {groupConversations.map((conversation) => (
+                                            <TouchableOpacity 
+                                                key={conversation.id}
+                                                className="group hover:bg-gray-50 rounded-md px-4 py-2"
+                                                onPress={() => handleConversationClick(conversation.id)}
+                                            >
+                                                {conversationTitles[conversation.id] ? (
+                                                    <View className="flex-row justify-between items-center">
+                                                        <Text className="text-black text-[0.75rem] flex-1">
+                                                            {conversationTitles[conversation.id]?.length > 30 
+                                                                ? conversationTitles[conversation.id].slice(0, 30) + '...' 
+                                                                : conversationTitles[conversation.id]}
+                                                        </Text>
+                                                    </View>
+                                                ) : (
+                                                    <ConversationSkeleton />
+                                                )}
+                                                </TouchableOpacity>
+                                            ))}
                                         </View>
-                                    </TouchableOpacity>
+                                    </View>
                                 ))}
-                            </View> */}
+                            </View>
                         </View>
                     )}
                 </ScrollView>
             </View>
 
-            {showDeleteModal && (
+            {/* {showDeleteModal && (
                 <View className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
                     <View className="bg-white p-8 rounded-xl w-[400px] shadow-xl">
                         <Text className="text-xl font-medium mb-4">Delete Chat</Text>
@@ -177,7 +283,7 @@ const Sidebar = ({
                         </View>
                     </View>
                 </View>
-            )}
+            )} */}
         </View>
     );
 };
@@ -212,4 +318,4 @@ const MenuItem = ({ id, icon, label, selectedItem, onSelect }: MenuItemProps) =>
     </TouchableOpacity>
 );
 
-export default Sidebar;
+export default forwardRef(Sidebar);

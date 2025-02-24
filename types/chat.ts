@@ -16,13 +16,13 @@ export interface ChatSection {
 export interface SidebarProps {
     selectedItem: string;
     onSelectItem: (item: string) => void;
-    chatHistory: ChatHistory;
     isLoading: boolean;
     currentView: 'chat' | 'portfolio' | 'facility';
     activeView: ActiveView;
     onChangeView: (view: ActiveView) => void;
     loadConversation: (id: string) => void;
-    conversations: Conversation[];
+    conversations?: Conversation[];
+    onRefreshConversations?: () => Promise<void>;
 }
 
 export interface Message {
@@ -42,18 +42,17 @@ export interface DashboardChatProps {
     title?: string;
     placeholder?: string;
     disclaimer?: string;
-    onChatUpdated?: () => Promise<void>;
-    messages: ChatMessage[];
-    onSendMessage: (message: string) => Promise<void>;
-    isLoading: boolean;
-    error: string | null;       
+    onChatUpdated?: () => void;
+    messages?: ChatMessage[];
+    onSendMessage?: (message: string) => Promise<void>;
+    isLoading?: boolean;
+    error?: string | null;       
 }
 
 export interface DashboardProps {
-    isLoading: boolean;
-    chatHistory: ChatHistory;
+    isLoading?: boolean;
     conversations: Conversation[];
-    onChatUpdated: (newMessage: ChatMessage) => Promise<void>;
+    onChatUpdated?: (newMessage: ChatMessage) => Promise<void>;
 }
 
 export interface Conversation {
@@ -103,8 +102,6 @@ export interface SaveChatParams {
     thread_id: string;
     type: 'user' | 'assistant';
 }
-
-export type ChatHistory = ChatSection[];
 
 export interface ChatMessage {
     id: string;

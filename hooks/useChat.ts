@@ -3,38 +3,25 @@ import chatService from '@/services/chatService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Message } from '@/types/chat';
 
-export const useChat = (initialThreadId?: string, onChatUpdated?: (message: Message) => Promise<void>) => {
+export const useChat = () => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [threadId, setThreadId] = useState<string>(initialThreadId ?? '');
-
-    const loadConversation = async (conversationId: string) => {
-        try {
-            setIsLoading(true);
-            const history = await chatService.getConversationMessages(conversationId);
-            setMessages(history);
-            setThreadId(conversationId);
-            await AsyncStorage.setItem('currentThreadId', conversationId);
-        } catch (error) {
-            console.error('Error loading conversation:', error);
-            setError('Failed to load conversation');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const [threadId, setThreadId] = useState<string>('');
 
     const sendMessage = async (text: string) => {
         setIsLoading(true);
         setError(null);
 
         try {
+            console.log('useChat: Initiating message send:', { text, currentThreadId: threadId });
+
             const userMessage: Message = {
                 id: Date.now().toString(),
                 text,
                 type: 'user',
                 timestamp: new Date(),
-                thread_id: '',
+                thread_id: threadId,
                 role: 'user',
                 content: text,
                 created_at: new Date().toISOString(),
@@ -44,14 +31,21 @@ export const useChat = (initialThreadId?: string, onChatUpdated?: (message: Mess
             setMessages(prev => [...prev, userMessage]);
 
             const response = await chatService.sendMessage(text);
+            console.log('useChat: Received API response:', {
+                hasResponse: !!response.response,
+                threadId: response.thread_id,
+                messageLength: response.response?.length
+            });
 
             if (response && response.response) {
+                setThreadId(response.thread_id);
+                
                 const assistantMessage: Message = {
                     id: (Date.now() + 1).toString(),
                     text: response.response,
                     type: 'assistant',
                     timestamp: new Date(),
-                    thread_id: response.thread_id || '',
+                    thread_id: response.thread_id,
                     role: 'assistant',
                     content: response.response,
                     created_at: new Date().toISOString(),
@@ -59,50 +53,17 @@ export const useChat = (initialThreadId?: string, onChatUpdated?: (message: Mess
                 };
 
                 setMessages(prev => [...prev, assistantMessage]);
-                if (onChatUpdated) await onChatUpdated(assistantMessage);
+                console.log('useChat: Message thread updated successfully');
             }
         } catch (error) {
-            console.error('Error en sendMessage:', error);
+            console.error('useChat: Error in message flow:', error);
             setError('Error al enviar el mensaje');
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Solo cargar historial al inicio o cuando cambia threadId
-    useEffect(() => {
-        if (threadId && messages.length === 0) {
-            loadThreadHistory();
-        }
-    }, [threadId]);
-
-    const loadThreadHistory = async () => {
-        try {
-            setIsLoading(true);
-            const history = await chatService.getThreadHistory(threadId);
-            
-            const formattedMessages = history.messages.map((msg: any) => ({
-                id: msg.id,
-                role: msg.role,
-                content: msg.content,
-                created_at: msg.created_at,
-                message_metadata: msg.message_metadata || {},
-                text: msg.content,
-                type: msg.role as 'user' | 'assistant',
-                timestamp: new Date(msg.created_at),
-                thread_id: msg.thread_id || '',
-            }));
-
-            setMessages(formattedMessages);
-        } catch (error) {
-            setError('Failed to load chat history');
-            console.error('History loading error:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const clearMessages = () => {
+    const clearChat = () => {
         setMessages([]);
         setThreadId('');
         setError(null);
@@ -113,8 +74,7 @@ export const useChat = (initialThreadId?: string, onChatUpdated?: (message: Mess
         isLoading,
         error,
         sendMessage,
-        threadId,
-        clearMessages,
-        loadConversation
+        clearChat,
+        threadId
     };
 }; 

@@ -1,11 +1,13 @@
 import ImagesPath from '@/assets/ImagesPath';
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Platform, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
 import { useChat } from '@/hooks/useChat';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeSyntheticEvent, TextInputKeyPressEventData } from 'react-native';
 import { DashboardChatProps } from '@/types/chat';
+
+const { height } = Dimensions.get('window');
+const maxHeight = height * 0.65;
 
 const DashboardChat = ({
     title = "What can we help with?",
@@ -13,63 +15,54 @@ const DashboardChat = ({
     disclaimer = "Senior Care Alliance can make mistakes. Check important info.",
     onChatUpdated,
 }: DashboardChatProps) => {
-    const { messages, sendMessage, isLoading: isSending, error: chatError, loadConversation } = useChat();
+    const { messages, sendMessage, isLoading: isSending, } = useChat();
     const [inputText, setInputText] = useState('');
     const [error, setError] = useState('');
     const scrollViewRef = useRef<ScrollView>(null);
-
-    useEffect(() => {
-        if (onChatUpdated) {
-            const loadSelectedChat = async () => {
-                const selectedChatId = await AsyncStorage.getItem('selectedChatId');
-                if (selectedChatId) {
-                    await loadConversation(selectedChatId);
-                }
-            };
-            loadSelectedChat();
-        }
-    }, [onChatUpdated]);
 
     const handleSubmit = async () => {
         if (!inputText.trim() || isSending) return;
 
         try {
             setError('');
-            await sendMessage(inputText);
+            console.log('Attempting to send message:', inputText);
+            const response = await sendMessage(inputText);
+            console.log('Message sent successfully:', response);
             setInputText('');
             scrollViewRef.current?.scrollToEnd({ animated: true });
 
         } catch (error) {
+            console.error('Failed to send message:', error);
             setError('Failed to send message');
-            console.error('Chat submission error:', error);
         }
     };
 
     const handleKeyPress = (event: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
-        if (event.nativeEvent.key === 'Enter' && !event.nativeEvent.shiftKey) {
+        const { key, shiftKey } = event.nativeEvent as KeyboardEvent; // Cast to KeyboardEvent
+        if (key === 'Enter' && !shiftKey) {
             event.preventDefault(); // Prevent default behavior
             handleSubmit(); // Call the function to send the message
         }
     };
 
-    const renderMessage = (message: any) => {
-        // Helper function to check if response contains structured data
-        const hasStructuredData = (message: any) => {
-            return message.bigquery_data &&
-                Array.isArray(message.bigquery_data) &&
-                message.bigquery_data.length > 0;
-        };
+    const hasStructuredData = (message: any) => {
+        return message.bigquery_data && 
+               (Array.isArray(message.bigquery_data) || 
+                typeof message.bigquery_data === 'object');
+    };
 
+    const renderMessage = (message: any) => {
         // Helper function to render dynamic table
         const renderDynamicTable = (data: any) => {
             if (Array.isArray(data)) {
+                // Manejo de arrays (múltiples registros)
                 const headers = Object.keys(data[0] || {});
                 return (
                     <View className="mt-4 mb-4">
                         {/* Main Container */}
                         <View className="border-2 border-gray-200 rounded-xl overflow-hidden bg-white shadow-md">
                             {/* Scrollable Container */}
-                            <ScrollView
+                            <ScrollView 
                                 horizontal={true}
                                 showsHorizontalScrollIndicator={true}
                                 className="flex-1"
@@ -79,13 +72,17 @@ const DashboardChat = ({
                                     <View className="sticky top-0 z-10 border-b-2 border-gray-200">
                                         <View className="flex-row bg-[#f1f5f9]">
                                             {headers.map((header, index) => (
-                                                <View
+                                                <View 
                                                     key={index}
-                                                    className={`flex-1 min-w-[150px] ${header.toLowerCase().includes('nombre') ? 'min-w-[250px]' : ''
-                                                        } ${header.toLowerCase().includes('dirección') ? 'min-w-[200px]' : ''
-                                                        }`}
+                                                    className={`flex-1 min-w-[150px] ${
+                                                        header.toLowerCase().includes('nombre') || 
+                                                        header.toLowerCase().includes('name') ? 'min-w-[250px]' : ''
+                                                    } ${
+                                                        header.toLowerCase().includes('dirección') || 
+                                                        header.toLowerCase().includes('address') ? 'min-w-[200px]' : ''
+                                                    }`}
                                                 >
-                                                    <Text
+                                                    <Text 
                                                         className="px-6 py-4 font-bold text-[13px] text-gray-700 capitalize border-r border-gray-300"
                                                         style={{
                                                             textAlign: typeof data[0][header] === 'number' ? 'right' : 'left'
@@ -101,25 +98,31 @@ const DashboardChat = ({
                                     {/* Table Body */}
                                     <View className="bg-white">
                                         {data.map((item, rowIndex) => (
-                                            <View
+                                            <View 
                                                 key={rowIndex}
-                                                className={`flex-row ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                                                    } hover:bg-gray-100`}
+                                                className={`flex-row ${
+                                                    rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                                                } hover:bg-gray-100`}
                                             >
                                                 {headers.map((header, colIndex) => (
-                                                    <View
+                                                    <View 
                                                         key={colIndex}
-                                                        className={`flex-1 min-w-[150px] ${header.toLowerCase().includes('nombre') ? 'min-w-[250px]' : ''
-                                                            } ${header.toLowerCase().includes('dirección') ? 'min-w-[200px]' : ''
-                                                            }`}
+                                                        className={`flex-1 min-w-[150px] ${
+                                                            header.toLowerCase().includes('nombre') || 
+                                                            header.toLowerCase().includes('name') ? 'min-w-[250px]' : ''
+                                                        } ${
+                                                            header.toLowerCase().includes('dirección') || 
+                                                            header.toLowerCase().includes('address') ? 'min-w-[200px]' : ''
+                                                        }`}
                                                     >
-                                                        <Text
-                                                            className={`px-6 py-4 text-[13px] ${typeof item[header] === 'number'
+                                                        <Text 
+                                                            className={`px-6 py-4 text-[13px] ${
+                                                                typeof item[header] === 'number' 
                                                                     ? 'text-right font-medium text-gray-700'
                                                                     : 'text-gray-600'
-                                                                } border-r border-gray-200 border-b`}
+                                                            } border-r border-gray-200 border-b`}
                                                         >
-                                                            {typeof item[header] === 'object'
+                                                            {typeof item[header] === 'object' 
                                                                 ? JSON.stringify(item[header])
                                                                 : String(item[header])}
                                                         </Text>
@@ -149,17 +152,19 @@ const DashboardChat = ({
                     <View className="mt-4 mb-4">
                         <View className="border-2 border-gray-200 rounded-xl overflow-hidden bg-white shadow-md">
                             {Object.entries(data).map(([key, value], index) => (
-                                <View
+                                <View 
                                     key={index}
-                                    className={`flex-row ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                                        } ${index < Object.entries(data).length - 1 ? 'border-b border-gray-200' : ''
-                                        }`}
+                                    className={`flex-row ${
+                                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                                    } ${
+                                        index < Object.entries(data).length - 1 ? 'border-b border-gray-200' : ''
+                                    }`}
                                 >
                                     <Text className="w-1/3 px-6 py-4 bg-[#f8fafc] text-[13px] font-semibold text-gray-700 capitalize border-r border-gray-200">
                                         {key.replace(/_/g, ' ')}
                                     </Text>
                                     <Text className="w-2/3 px-6 py-4 text-[13px] text-gray-600">
-                                        {typeof value === 'object'
+                                        {typeof value === 'object' 
                                             ? JSON.stringify(value)
                                             : String(value)}
                                     </Text>
@@ -258,7 +263,7 @@ const DashboardChat = ({
                         ref={scrollViewRef}
                         className="w-full p-8 pb-20"
                         showsVerticalScrollIndicator={false}
-                        style={{ maxHeight: '65vh' }}
+                        style={{ maxHeight }}
                     >
                         <Animated.View
                             entering={FadeIn.duration(400)}
