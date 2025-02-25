@@ -126,7 +126,7 @@ const Portfolio = () => {
         try {
             setTableLoading(true);
             const response = await fetch(
-                `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/`
+                `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities`
             );
             const data = await response.json();
             
@@ -251,12 +251,6 @@ const Portfolio = () => {
     useEffect(() => {
         fetchFacilities();
     }, []);
-
-    // Función para cerrar el modal y actualizar la tabla
-    const closeModalAndUpdate = async () => {
-        setModalVisible(false);
-        await fetchFacilities();
-    };
 
     const handleAddFacility = async (ccn: string) => {
         try {
