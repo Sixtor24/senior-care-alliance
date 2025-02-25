@@ -68,6 +68,8 @@ const Portfolio = () => {
     const PORTFOLIO_ID = 'de0b6743-f1d0-4e79-9c3d-e91a9356d254';
     const [tableLoading, setTableLoading] = useState(false);
     const [modalLoading, setModalLoading] = useState(false);
+    const [editingPremium, setEditingPremium] = useState<string | null>(null);
+    const [premiumValue, setPremiumValue] = useState<string>('');
 
     const getRiskLevelStyle = (level: Facility['riskScore']) => {
         switch (level.toLowerCase()) {
@@ -124,6 +126,7 @@ const Portfolio = () => {
 
     const fetchFacilities = async () => {
         try {
+            console.log()
             setTableLoading(true);
             const response = await fetch(
                 `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities`
@@ -197,6 +200,54 @@ const Portfolio = () => {
         }
     };
 
+    const handlePremiumUpdate = async (ccn: string, amount: string) => {
+        try {
+            // Validar que el monto sea un número válido
+            const premiumAmount = parseFloat(amount);
+            if (isNaN(premiumAmount) || premiumAmount < 0) {
+                console.error('Invalid premium amount:', amount);
+                return;
+            }
+
+            // Convertir a entero ya que la API espera un integer
+            const formattedPremium = Math.round(premiumAmount);
+            
+            console.log('Starting premium update:', { ccn, amount, formattedPremium });
+            setTableLoading(true);
+            
+            const response = await fetch(
+                `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/${ccn}/premium?premium=${formattedPremium}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'accept': 'application/json'
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                console.error('API Error Response:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    errorData
+                });
+                throw new Error(`Failed to update premium: ${JSON.stringify(errorData)}`);
+            }
+
+            console.log('Premium updated successfully, refreshing table...');
+            await fetchFacilities();
+            console.log('Table refresh completed');
+            setEditingPremium(null);
+            setPremiumValue('');
+
+        } catch (error) {
+            console.error('Error updating premium:', error);
+        } finally {
+            setTableLoading(false);
+        }
+    };
+
     const searchFavoriteFacilities = async (text: string) => {
         try {
             setTableLoading(true);
@@ -240,7 +291,7 @@ const Portfolio = () => {
     const handleAddFacilitySearchInput = debounce((text: string) => {
         setFavoriteSearchQuery(text);
         searchFavoriteFacilities(text);
-    }, ); // 300ms debounce delay
+    },); // 300ms debounce delay
 
     const handleGeneralSearchInput = debounce((text: string) => {
         setGeneralSearchQuery(text);
@@ -394,14 +445,68 @@ const Portfolio = () => {
                                 <Text className="text-[14px] text-gray-600 max-w-[150px]">{formatAddress(facility)}</Text>
                             </View>
                             <View className="flex-1 flex-row items-center">
-                                <View className="flex-row items-center border border-gray-200 rounded-xl py-3.5 pl-4 bg-white w-[130px]">
+                                {editingPremium === facility.ccn ? (
                                     <View className="flex-row items-center">
-                                        <Fontisto name="dollar" size={13} className='text-emerald-600' />
-                                        <Text className="text-[14px] text-gray-900 ml-1">
-                                            {facility.premium.toFixed(2)}
-                                        </Text>
+                                        <View className="flex-row items-center border border-gray-200 rounded-xl py-3.5 pl-4 bg-white w-[130px]">
+                                            <Fontisto name="dollar" size={13} className='text-emerald-600' />
+                                            <TextInput
+                                                value={premiumValue}
+                                                onChangeText={(text) => {
+                                                    // Solo permitir números y un punto decimal
+                                                    const filtered = text.replace(/[^0-9.]/g, '');
+                                                    // Evitar múltiples puntos decimales
+                                                    if (filtered.split('.').length <= 2) {
+                                                        setPremiumValue(filtered);
+                                                    }
+                                                }}
+                                                onBlur={() => {
+                                                    if (!premiumValue) {
+                                                        setEditingPremium(null);
+                                                        setPremiumValue(facility.premium.toString());
+                                                    }
+                                                }}
+                                                keyboardType="numeric"
+                                                className="ml-1 flex-1 text-[14px] text-gray-900"
+                                                autoFocus
+                                                style={[Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)]}
+                                            />
+                                        </View>
+                                        <TouchableOpacity 
+                                            className={`ml-2 p-2 rounded-full ${
+                                                !premiumValue || isNaN(parseFloat(premiumValue)) 
+                                                ? 'bg-gray-300' 
+                                                : 'bg-emerald-600'
+                                            }`}
+                                            onPress={() => {
+                                                if (premiumValue && !isNaN(parseFloat(premiumValue))) {
+                                                    console.log('Guardando premium:', {
+                                                        ccn: facility.ccn,
+                                                        premium: premiumValue
+                                                    });
+                                                    handlePremiumUpdate(facility.ccn, premiumValue);
+                                                }
+                                            }}
+                                            disabled={!premiumValue || isNaN(parseFloat(premiumValue))}
+                                        >
+                                            <AntDesign name="check" size={16} color="white" />
+                                        </TouchableOpacity>
                                     </View>
-                                </View>
+                                ) : (
+                                    <TouchableOpacity 
+                                        onPress={() => {
+                                            setEditingPremium(facility.ccn);
+                                            setPremiumValue(facility.premium.toString());
+                                        }}
+                                        className="flex-row items-center border border-gray-200 rounded-xl py-3.5 pl-4 bg-white w-[130px]"
+                                    >
+                                        <View className="flex-row items-center">
+                                            <Fontisto name="dollar" size={13} className='text-emerald-600' />
+                                            <Text className="text-[14px] text-gray-900 ml-1">
+                                                {facility.premium.toFixed(2)}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                )}
                             </View>
                             <View className="flex-1">
                                 <Text className={`px-6 py-3.5 rounded-full border w-fit ${getRiskLevelStyle(facility.riskScore)}`}>
