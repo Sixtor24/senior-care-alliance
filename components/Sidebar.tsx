@@ -9,40 +9,6 @@ export type ActiveView = 'chat' | 'portfolio' | 'facility';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sca-api-535434239234.us-central1.run.app';
 
-const SidebarSkeleton = () => (
-    <View className="p-3 gap-5">
-        <LoadingSkeleton height={64} className="my-4" />
-        
-        <View className="flex-col gap-1">
-            {[1, 2, 3].map((i) => (
-                <LoadingSkeleton 
-                    key={i} 
-                    height={40} 
-                    className="rounded-md"
-                />
-            ))}
-        </View>
-        
-        <View className="w-full gap-5 pt-4">
-            {[1, 2].map((section) => (
-                <View key={section} className="w-full gap-1">
-                    <LoadingSkeleton 
-                        width="50%" 
-                        height={20} 
-                        className="mb-2"
-                    />
-                    {[1, 2, 3].map((item) => (
-                        <LoadingSkeleton 
-                            key={item}
-                            height={36}
-                            className="rounded-md"
-                        />
-                    ))}
-                </View>
-            ))}
-        </View>
-    </View>
-);
 
 const ConversationSkeleton = () => (
     <View className="w-full flex-row justify-between items-center">
@@ -192,9 +158,6 @@ const Sidebar = forwardRef<View, SidebarProps>(({
                 className="w-full bg-[#FFFFFF] h-full border-r border-gray-100"
             >
                 <ScrollView className="h-full" showsVerticalScrollIndicator={false}>
-                    {isLoading ? (
-                        <SidebarSkeleton />
-                    ) : (
                         <View className="p-3 px-4 gap-5">
                             <Image
                                 source={require('../assets/images/senior-care-logo.svg')}
@@ -254,7 +217,6 @@ const Sidebar = forwardRef<View, SidebarProps>(({
                                 ))}
                             </View>
                         </View>
-                    )}
                 </ScrollView>
             </View>
         </View>

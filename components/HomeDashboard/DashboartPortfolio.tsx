@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, Platform, ScrollView } from 'react-native';
 import { AntDesign, FontAwesome6, Fontisto } from '@expo/vector-icons';
 import SortIcon from '../ui/SortIcon';
@@ -44,22 +44,30 @@ interface AvailableFacility {
     address: string;
     city: string;
     state: string;
-    premium: number;
+    premium?: number;  // Make premium optional
     riskScore: string;
 }
 
 const Portfolio = () => {
-    const [searchQuery, setSearchQuery] = React.useState('');
-    const [facilities, setFacilities] = React.useState<Facility[]>([]);
-    const [pagination, setPagination] = React.useState<PaginationInfo>(MOCK_PAGINATION);
-    const [sortState, setSortState] = React.useState<SortState>({
+    const [favoriteSearchQuery, setFavoriteSearchQuery] = useState('');
+    const [generalSearchQuery, setGeneralSearchQuery] = useState('');
+    const [addFacilities, setAddFacilities] = useState<Facility[]>([]);
+    const [allFacilities, setAllFacilities] = useState<Facility[]>([]);
+    const [pagination, setPagination] = useState<PaginationInfo>(MOCK_PAGINATION);
+    const [sortState, setSortState] = useState<SortState>({
         field: null,
         direction: null
     });
-    const [loading, setLoading] = React.useState(false);
-    const [isModalVisible, setModalVisible] = React.useState(false);
-    const [availableFacilities, setAvailableFacilities] = React.useState<AvailableFacility[]>([]);
-    const [addingFacility, setAddingFacility] = React.useState(false);
+    const [loading, setLoading] = useState(false);
+    const [isModalVisible, setModalVisible] = useState(false);
+    const [availableFacilities, setAvailableFacilities] = useState<AvailableFacility[]>([]);
+    const [addingFacility, setAddingFacility] = useState(false);
+    const [portfolioId, setPortfolioId] = useState<string | null>(null);
+    const [anotherInputValue, setAnotherInputValue] = useState('');
+    const [savingItems, setSavingItems] = useState<Set<string>>(new Set());
+    const PORTFOLIO_ID = 'de0b6743-f1d0-4e79-9c3d-e91a9356d254';
+    const [tableLoading, setTableLoading] = useState(false);
+    const [modalLoading, setModalLoading] = useState(false);
 
     const getRiskLevelStyle = (level: Facility['riskScore']) => {
         switch (level.toLowerCase()) {
@@ -74,47 +82,9 @@ const Portfolio = () => {
         }
     };
 
-    const handleSearch = async (query: string) => {
-        setSearchQuery(query);
-        try {
-            setLoading(true);
-            const response = await fetch(`https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/search?search_term=${query}&limit=10&offset=0`);
-            const data = await response.json();
-            
-            const transformedData = data.map((facility: any) => ({
-                ccn: facility.ccn,
-                facilityName: facility.facility_name,
-                address: facility.address,
-                city: facility.city,
-                state: facility.state,
-                premium: facility.premium || 0,
-                riskScore: facility.risk_score
-            }));
-            
-            setFacilities(transformedData);
-        } catch (error) {
-            console.error('Error searching facilities:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Debounce the search to avoid too many API calls
-    const debouncedSearch = React.useCallback(
-        debounce((query: string) => handleSearch(query), 300),
-        []
-    );
-
-    const handleSearchInput = (query: string) => {
-        setSearchQuery(query);
-        if (query.length >= 2) {
-            debouncedSearch(query);
-        }
-    };
-
     const handleRemoveFacility = async (ccn: string) => {
         try {
-            setLoading(true);
+            setTableLoading(true);
             const response = await fetch(
                 `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/${ccn}`,
                 {
@@ -122,16 +92,16 @@ const Portfolio = () => {
                 }
             );
 
-            if (response.ok) {
-                // Remove facility from local state if API call successful
-                setFacilities(facilities.filter(facility => facility.ccn !== ccn));
-            } else {
-                console.error('Error removing facility');
+            if (!response.ok) {
+                throw new Error('Failed to remove facility');
             }
+
+            await fetchFacilities();
+
         } catch (error) {
             console.error('Error removing facility:', error);
         } finally {
-            setLoading(false);
+            setTableLoading(false);
         }
     };
 
@@ -145,98 +115,187 @@ const Portfolio = () => {
     };
 
     const handleSort = (field: SortState['field']) => {
-        setSortState(prevState => {
-            let direction: SortState['direction'];
-            
-            if (prevState.field !== field) {
-                direction = 'asc';
-            } else {
-                direction = prevState.direction === 'asc' ? 'desc' : 'asc';
-            }
-            
-            return { field, direction };
-        });
-        // Later you'll add API call here
+        setSortState(prevState => ({
+            field,
+            direction: prevState.field !== field ? 'asc' : 
+                       prevState.direction === 'asc' ? 'desc' : 'asc'
+        }));
     };
 
-    // Fetch added facilities (for main screen)
     const fetchFacilities = async () => {
         try {
-            setLoading(true);
-            const response = await fetch('https://sca-api-535434239234.us-central1.run.app/portfolios/facilities');
+            setTableLoading(true);
+            const response = await fetch(
+                `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/`
+            );
             const data = await response.json();
             
-            const transformedData = data.map((facility: any) => ({
-                ccn: facility.ccn,
-                facilityName: facility.facility_name,
-                address: facility.address,
-                city: facility.city,
-                state: facility.state,
-                premium: facility.premium || 0,
-                riskScore: facility.risk_score
-            }));
-            
-            setFacilities(transformedData);
+            if (Array.isArray(data)) {
+                const transformedData = data.map((facility: any) => ({
+                    ccn: facility.ccn,
+                    facilityName: facility.facility_name,
+                    address: facility.address,
+                    city: facility.city,
+                    state: facility.state,
+                    premium: facility.premium || 0,
+                    riskScore: facility.risk_score
+                }));
+                
+                setAllFacilities(transformedData);
+            } else {
+                console.error('Unexpected data format:', data);
+                setAllFacilities([]);
+            }
         } catch (error) {
             console.error('Error fetching facilities:', error);
+            setAllFacilities([]);
+        } finally {
+            setTableLoading(false);
+        }
+    };
+
+    const searchFacilities = async (text: string, isFavoriteSearch: boolean) => {
+        if (!text.trim()) {
+            if (isFavoriteSearch) {
+                fetchFacilities(); // Fetch all saved facilities
+            } else {
+                setAvailableFacilities([]); // Clear modal table
+            }
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const response = await fetch(
+                `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/search?${isFavoriteSearch ? `portfolio_id=${PORTFOLIO_ID}&` : ''}search_term=${encodeURIComponent(text)}&limit=10&offset=0`
+            );
+
+            if (!response.ok) {
+                throw new Error('Search request failed');
+            }
+
+            const data = await response.json();
+            
+            if (Array.isArray(data)) {
+                const transformedData = data.map((facility: any) => ({
+                    ccn: facility.ccn,
+                    facilityName: facility.facility_name,
+                    address: facility.address,
+                    city: facility.city,
+                    state: facility.state,
+                    premium: facility.premium || 0,
+                    riskScore: facility.risk_score
+                }));
+                
+                // Solo actualiza availableFacilities para la búsqueda en el modal
+                setAvailableFacilities(transformedData); // Update available facilities for modal
+            }
+        } catch (error) {
+            console.error('Error searching facilities:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    // Fetch available facilities (for modal)
-    const fetchAvailableFacilities = async () => {
+    const searchFavoriteFacilities = async (text: string) => {
         try {
-            const response = await fetch('https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/search?search_term=&limit=100&offset=0');
+            setTableLoading(true);
+            
+            if (!text.trim()) {
+                // Si no hay texto, volver a cargar todas las facilities del portfolio
+                await fetchFacilities();
+                return;
+            }
+
+            const response = await fetch(
+                `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/search?portfolio_id=${PORTFOLIO_ID}&search_term=${encodeURIComponent(text)}`
+            );
+
+            if (!response.ok) {
+                throw new Error('Search request failed');
+            }
+
             const data = await response.json();
             
-            const transformedData = data.map((facility: any) => ({
-                ccn: facility.ccn,
-                facilityName: facility.facility_name,
-                address: facility.address,
-                city: facility.city,
-                state: facility.state,
-                premium: facility.premium || 0,
-                riskScore: facility.risk_score
-            }));
-            
-            setAvailableFacilities(transformedData);
+            if (Array.isArray(data)) {
+                const transformedData = data.map((facility: any) => ({
+                    ccn: facility.ccn,
+                    facilityName: facility.facility_name,
+                    address: facility.address,
+                    city: facility.city,
+                    state: facility.state,
+                    premium: facility.premium || 0,
+                    riskScore: facility.risk_score
+                }));
+                
+                setAllFacilities(transformedData); // Actualizar la tabla principal
+            }
         } catch (error) {
-            console.error('Error fetching available facilities:', error);
+            console.error('Error searching facilities:', error);
+        } finally {
+            setTableLoading(false);
         }
+    };
+
+    const handleAddFacilitySearchInput = debounce((text: string) => {
+        setFavoriteSearchQuery(text);
+        searchFavoriteFacilities(text);
+    }, ); // 300ms debounce delay
+
+    const handleGeneralSearchInput = debounce((text: string) => {
+        setGeneralSearchQuery(text);
+        searchFacilities(text, false);
+    }, ); // 300ms debounce delay
+
+    // Efecto para cargar facilities solo al inicio
+    useEffect(() => {
+        fetchFacilities();
+    }, []);
+
+    // Función para cerrar el modal y actualizar la tabla
+    const closeModalAndUpdate = async () => {
+        setModalVisible(false);
+        await fetchFacilities();
     };
 
     const handleAddFacility = async (ccn: string) => {
         try {
-            setAddingFacility(true);
+            setModalLoading(true);
+            setSavingItems(prev => new Set(prev).add(ccn));
+
             const response = await fetch(
                 `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/${ccn}`,
                 {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                 }
             );
 
-            if (response.ok) {
-                // Refresh both lists
-                await fetchFacilities();
-                await fetchAvailableFacilities();
+            if (!response.ok) {
+                throw new Error('Failed to add facility');
             }
+
+            // Primero cerramos el modal
+            setModalVisible(false);
+            // Limpiamos los estados del modal
+            setGeneralSearchQuery('');
+            setAvailableFacilities([]);
+            
+            // Después actualizamos la tabla
+            await fetchFacilities();
+
         } catch (error) {
             console.error('Error adding facility:', error);
         } finally {
-            setAddingFacility(false);
+            setModalLoading(false);
+            setSavingItems(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(ccn);
+                return newSet;
+            });
         }
-    };
-
-    // Fetch added facilities on component mount
-    React.useEffect(() => {
-        fetchFacilities();
-    }, []);
-
-    // Update modal open handler
-    const handleOpenModal = () => {
-        setModalVisible(true);
-        fetchAvailableFacilities();
     };
 
     return (
@@ -248,17 +307,17 @@ const Portfolio = () => {
                     <View className="flex-row items-center bg-white rounded-lg px-3 py-2 flex-1 mr-4 border border-gray-300">
                         <AntDesign name="search1" size={22} color="#C5C5C5" />
                         <TextInput
-                            placeholder="Search for facility"
+                            placeholder="Search in favorites"
                             className="ml-2 flex-1 h-6 text-[14px] text-gray-900"
-                            value={searchQuery}
-                            onChangeText={handleSearchInput}
+                            value={favoriteSearchQuery}
+                            onChangeText={handleAddFacilitySearchInput}
                             style={[Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)]}
                             placeholderTextColor="#667085"
                         />
                     </View>
                     <TouchableOpacity 
                         className="bg-dark-blue px-6 py-3.5 gap-1 rounded-full flex-row items-center"
-                        onPress={handleOpenModal}
+                        onPress={() => setModalVisible(true)}
                     >
                         <Text className="text-white text-[14px] font-medium">Add facilities</Text>
                         <FontAwesome6 name="angle-right" size={13} color="white" />
@@ -323,17 +382,19 @@ const Portfolio = () => {
                     className="flex-1"
                     showsVerticalScrollIndicator={false}
                 >
-                    {loading ? (
+                    {tableLoading ? (
                         <View className="p-4 px-6">
                             <Text>Loading...</Text>
                         </View>
-                    ) : facilities.map((facility) => (
+                    ) : allFacilities.map((facility) => (
                         <View 
                             key={facility.ccn} 
                             className="flex-row items-center p-4 px-6 py-5 border-b border-gray-100"
                         >
                             <View className="flex-1">
+                                <View className='max-w-[150px]'>
                                 <Text className="text-[14px] font-semibold text-gray-900">{facility.facilityName}</Text>
+                                </View>
                             </View>
                             <View className="flex-1">
                                 <Text className="text-[14px] text-gray-600 max-w-[150px]">{formatAddress(facility)}</Text>
@@ -364,7 +425,7 @@ const Portfolio = () => {
                 </ScrollView>
             </View>
 
-            {facilities.length > 10 && (
+            {addFacilities.length > 10 && (
                 <View className="flex-row items-center justify-between mt-6 px-4">
                     <TouchableOpacity 
                         className="flex-row items-center gap-2"
@@ -425,43 +486,36 @@ const Portfolio = () => {
 
             <Modal
                 isVisible={isModalVisible}
-                onBackdropPress={() => setModalVisible(false)}
+                onBackdropPress={() => {
+                    setModalVisible(false);
+                    fetchFacilities();
+                }}
                 className="m-0"
             >
                 <View className="bg-white rounded-3xl p-6 mx-auto w-[600px]">
-                    <View className="flex-row justify-between items-center mb-6">
-                        <Text className="text-2xl font-light text-dark-blue">Add Facilities</Text>
-                        <TouchableOpacity onPress={() => setModalVisible(false)}>
-                            <AntDesign name="close" size={24} color="#667085" />
-                        </TouchableOpacity>
-                    </View>
 
                     <View className="flex-row items-center justify-between mb-6">
-                        <Text className="text-[32px] font-extralight text-dark-blue">Portfolio</Text>
+                        <Text className="text-2xl font-light text-dark-blue">Add Facilities</Text>
                         
                         <View className="flex-row items-center flex-1 max-w-[450px] ml-8">
                             <View className="flex-row items-center bg-white rounded-lg px-3 py-2 flex-1 mr-4 border border-gray-300">
                                 <AntDesign name="search1" size={22} color="#C5C5C5" />
                                 <TextInput
-                                    placeholder="Search for facility"
+                                    placeholder="Search all facilities"
                                     className="ml-2 flex-1 h-6 text-[14px] text-gray-900"
-                                    value={searchQuery}
-                                    onChangeText={handleSearchInput}
+                                    value={generalSearchQuery}
+                                    onChangeText={handleGeneralSearchInput}
                                     style={[Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)]}
                                     placeholderTextColor="#667085"
                                 />
                             </View>
-                            <TouchableOpacity 
-                                className="bg-dark-blue px-6 py-3.5 gap-1 rounded-full flex-row items-center"
-                                onPress={handleOpenModal}
-                            >
-                                <Text className="text-white text-[14px] font-medium">Add facilities</Text>
-                                <FontAwesome6 name="angle-right" size={13} color="white" />
-                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => setModalVisible(false)}>
+                            <AntDesign name="close" size={24} color="#667085" />
+                        </TouchableOpacity>
                         </View>
                     </View>
 
-                    <ScrollView className="max-h-[400px]">
+                    <ScrollView className="max-h-[400px] mt-4">
                         {availableFacilities.map((facility) => (
                             <View 
                                 key={facility.ccn}
@@ -475,12 +529,6 @@ const Portfolio = () => {
                                         {`${facility.address} ${facility.city}, ${facility.state}`}
                                     </Text>
                                     <View className="flex-row items-center mt-2">
-                                        <View className="flex-row items-center mr-4">
-                                            <Fontisto name="dollar" size={13} className='text-emerald-600' />
-                                            <Text className="text-[14px] text-gray-900 ml-1">
-                                                {facility.premium.toFixed(2)}
-                                            </Text>
-                                        </View>
                                         <Text className={`px-3 py-1 rounded-full border w-fit ${getRiskLevelStyle(facility.riskScore)}`}>
                                             {facility.riskScore}
                                         </Text>
@@ -489,10 +537,10 @@ const Portfolio = () => {
                                 <TouchableOpacity 
                                     className="bg-dark-blue px-4 py-2 rounded-full"
                                     onPress={() => handleAddFacility(facility.ccn)}
-                                    disabled={addingFacility}
+                                    disabled={savingItems.has(facility.ccn)}
                                 >
                                     <Text className="text-white text-[14px]">
-                                        {addingFacility ? 'Adding...' : 'Add'}
+                                        {savingItems.has(facility.ccn) ? 'Adding...' : 'Add'}
                                     </Text>
                                 </TouchableOpacity>
                             </View>
