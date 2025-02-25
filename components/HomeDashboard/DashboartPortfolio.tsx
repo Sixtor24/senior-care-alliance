@@ -4,6 +4,7 @@ import { AntDesign, FontAwesome6, Fontisto } from '@expo/vector-icons';
 import SortIcon from '../ui/SortIcon';
 import { debounce } from 'lodash';
 import Modal from 'react-native-modal';
+import { ActiveView } from '../Sidebar';
 
 // Types that would match your API response
 interface Facility {
@@ -14,6 +15,11 @@ interface Facility {
     state: string;
     premium: number;
     riskScore: string;
+    risk_mitigation_level: string;
+    risk_mitigation_score: number;
+    overall_rating: number;
+    number_of_certified_beds: number;
+    risk_deficiencies_score: number;
 }
 
 interface PaginationInfo {
@@ -48,7 +54,12 @@ interface AvailableFacility {
     riskScore: string;
 }
 
-const Portfolio = () => {
+interface DashboardProps {
+    onChangeView: (view: ActiveView) => void;
+    onSelectFacility: (facilityData: any) => void;
+}
+
+const Portfolio = ({ onChangeView, onSelectFacility }: DashboardProps) => {
     const [favoriteSearchQuery, setFavoriteSearchQuery] = useState('');
     const [generalSearchQuery, setGeneralSearchQuery] = useState('');
     const [addFacilities, setAddFacilities] = useState<Facility[]>([]);
@@ -141,7 +152,12 @@ const Portfolio = () => {
                     city: facility.city,
                     state: facility.state,
                     premium: facility.premium || 0,
-                    riskScore: facility.risk_score
+                    riskScore: facility.risk_score,
+                    risk_mitigation_level: facility.risk_mitigation_level,
+                    risk_mitigation_score: facility.risk_mitigation_score,
+                    overall_rating: facility.overall_rating,
+                    number_of_certified_beds: facility.number_of_certified_beds,
+                    risk_deficiencies_score: facility.risk_deficiencies_score
                 }));
                 
                 setAllFacilities(transformedData);
@@ -276,7 +292,12 @@ const Portfolio = () => {
                     city: facility.city,
                     state: facility.state,
                     premium: facility.premium || 0,
-                    riskScore: facility.risk_score
+                    riskScore: facility.risk_score,
+                    risk_mitigation_level: facility.risk_mitigation_level,
+                    risk_mitigation_score: facility.risk_mitigation_score,
+                    overall_rating: facility.overall_rating,
+                    number_of_certified_beds: facility.number_of_certified_beds,
+                    risk_deficiencies_score: facility.risk_deficiencies_score
                 }));
                 
                 setAllFacilities(transformedData); // Actualizar la tabla principal
@@ -340,6 +361,58 @@ const Portfolio = () => {
                 newSet.delete(ccn);
                 return newSet;
             });
+        }
+    };
+
+    const handleFacilityClick = async (facility: Facility) => {
+        try {
+            const insightsResponse = await fetch(
+                `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/${facility.ccn}/insights`
+            );
+            
+            if (!insightsResponse.ok) {
+                throw new Error('Failed to fetch facility insights');
+            }
+
+            const insightsData = await insightsResponse.json();
+            console.log('Insights Data:', insightsData);
+
+            const facilityData = {
+                name: facility.facilityName,
+                address: formatAddress(facility),
+                metrics: {
+                    riskLevel: insightsData.risk_mitigation_level || 'N/A',
+                    riskScore: Number(insightsData.risk_mitigation_score) || 0,
+                    cmsRating: Number(insightsData.overall_rating) || 0,
+                    fireInspections: 'N/A',
+                    certifiedBeds: Number(insightsData.number_of_certified_beds) || 0,
+                    citations: Number(insightsData.risk_deficiencies_score) || 0,
+                    staffingRating: Number(insightsData.staffing_rating) || 0,
+                    healthInspectionRating: Number(insightsData.health_inspection_rating) || 0,
+                    qmRating: Number(insightsData.qm_rating) || 0,
+                    totalTags: Number(insightsData.total_tags) || 0
+                }
+            };
+            
+            console.log('Facility Data being sent:', facilityData);
+            onSelectFacility(facilityData);
+            onChangeView('facility');
+        } catch (error) {
+            console.error('Error fetching facility data:', error);
+            // Fallback con datos básicos si falla la llamada
+            onSelectFacility({
+                name: facility.facilityName,
+                address: formatAddress(facility),
+                metrics: {
+                    riskLevel: 'N/A',
+                    riskScore: 0,
+                    cmsRating: 0,
+                    fireInspections: 'N/A',
+                    certifiedBeds: 0,
+                    citations: 0
+                }
+            });
+            onChangeView('facility');
         }
     };
 
@@ -438,7 +511,11 @@ const Portfolio = () => {
                         >
                             <View className="flex-1">
                                 <View className='max-w-[150px]'>
-                                <Text className="text-[14px] font-semibold text-gray-900">{facility.facilityName}</Text>
+                                    <TouchableOpacity onPress={() => handleFacilityClick(facility)}>
+                                        <Text className="text-[14px] font-semibold text-gray-900 hover:text-dark-blue">
+                                            {facility.facilityName}
+                                        </Text>
+                                    </TouchableOpacity>
                                 </View>
                             </View>
                             <View className="flex-1">

@@ -24,6 +24,7 @@ const DashboardSkeleton = () => (
 const Dashboard = ({ isLoading = false }: Omit<DashboardProps, 'conversations'>) => {
     const [activeView, setActiveView] = useState<ActiveView>('chat');
     const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+    const [facilityData, setFacilityData] = useState<any>(null);
 
     const handleSelectItem = (item: string) => {
         setActiveView(item as ActiveView);
@@ -89,7 +90,14 @@ const Dashboard = ({ isLoading = false }: Omit<DashboardProps, 'conversations'>)
                                     entering={FadeIn.duration(300)}
                                     exiting={FadeOut.duration(300)}
                                 >
-                                    <DashboardPortfolio />
+                                    <DashboardPortfolio 
+                                        onChangeView={setActiveView}
+                                        onSelectFacility={(data) => {
+                                            console.log('Dashboard - Received facility data:', data);
+                                            setFacilityData(data);
+                                            setActiveView('facility');
+                                        }}
+                                    />
                                 </Animated.View>
                             )}
                             {activeView === 'facility' && (
@@ -97,7 +105,7 @@ const Dashboard = ({ isLoading = false }: Omit<DashboardProps, 'conversations'>)
                                     entering={FadeIn.duration(300)}
                                     exiting={FadeOut.duration(300)}
                                 >
-                                    <DashboardFacility />
+                                    <DashboardFacility facilityData={facilityData} />
                                 </Animated.View>
                             )}
                         </>

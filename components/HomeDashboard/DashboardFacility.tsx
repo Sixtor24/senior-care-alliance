@@ -40,24 +40,24 @@ interface DeficienciesTableProps {
     onPageChange: (page: number) => void;
 }
 
-const DashboardFacility = () => {
-    const facilityData: FacilityData = {
-        name: 'Advent Health',
-        address: {
-            street: '600 Stewart Street',
-            city: 'Seattle',
-            state: 'WA',
-            zipCode: '98101'
-        },
+interface DashboardFacilityProps {
+    facilityData: {
+        name: string;
+        address: string;
         metrics: {
-            riskLevel: 'Low',
-            riskScore: 89.7,
-            cmsRating: 5,
-            fireInspections: 4,
-            certifiedBeds: 350,
-            citations: 12
-        }
+            riskLevel: string;
+            riskScore: number;
+            cmsRating: number;
+            fireInspections: string;
+            certifiedBeds: number;
+            citations: number;
+        };
     };
+}
+
+const DashboardFacility = ({ facilityData }: DashboardFacilityProps) => {
+    console.log('DashboardFacility - Received facilityData:', facilityData);
+    console.log('DashboardFacility - Address:', facilityData.address);
 
     const mockData: Deficiency[] = [
         {
@@ -82,14 +82,16 @@ const DashboardFacility = () => {
 
     const [currentPage, setCurrentPage] = React.useState(1);
 
+    console.log('DashboardFacility - Metrics:', facilityData.metrics);
+
     return (
         <View className="flex-1 p-8">
             {/* Header */}
             <View className="flex-row items-center justify-between mb-8">
                 <Text className="text-[32px] font-extralight text-dark-blue">
-                    Facility Insights
+                    {facilityData.name}
                 </Text>
-                <View className="flex-1 max-w-xs">
+                {/* <View className="flex-1 max-w-xs">
                     <View className="flex-row items-center bg-white  rounded-xl px-3 py-2 drop-shadow-sm flex-1 border border-gray-300">
                         <AntDesign name="search1" size={22} color="#C5C5C5" />
                         <TextInput
@@ -99,48 +101,60 @@ const DashboardFacility = () => {
                             style={[Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)]}
                         />
                     </View>
-                </View>
+                </View> */}
             </View>
 
             {/* Facility Info Card */}
             <View className="bg-white rounded-3xl p-8 shadow-sm">
                 <View className="mb-6">
                     <Text className="text-xl font-semibold text-gray-900">{facilityData.name}</Text>
-                    <Text className="text-gray-600 mt-1">
-                        {`${facilityData.address.street}\n${facilityData.address.city}, ${facilityData.address.state}. ${facilityData.address.zipCode}`}
-                    </Text>
+                    <Text className="text-gray-600 mt-1">{facilityData.address}</Text>
                 </View>
 
                 {/* Metrics Grid */}
                 <View className="flex-row gap-4 mb-8">
-                    <View className="flex-1 bg-emerald-50 border border-emerald-700 rounded-xl pb-4 pl-4 pt-2 pr-2">
+                    {/* Risk Level */}
+                    <View className={`flex-1 ${
+                        facilityData.metrics.riskLevel.toLowerCase() === 'high' ? 'bg-red-50 border-red-700' :
+                        facilityData.metrics.riskLevel.toLowerCase() === 'medium' ? 'bg-yellow-50 border-yellow-700' :
+                        'bg-emerald-50 border-emerald-700'
+                    } rounded-xl pb-4 pl-4 pt-2 pr-2 border`}>
                         <View className="flex-row justify-between items-center mb-2">
                             <Text className="text-gray-700">Risk Level</Text>
-                            <Feather name="info" size={23} className='text-emerald-700' />
+                            <Feather name="info" size={23} color={
+                                facilityData.metrics.riskLevel.toLowerCase() === 'high' ? '#B91C1C' :
+                                facilityData.metrics.riskLevel.toLowerCase() === 'medium' ? '#B45309' :
+                                '#047857'
+                            } />
                         </View>
-                        <Text className="text-3xl font-semibold text-emerald-700">Low</Text>
+                        <Text className={`text-3xl font-semibold ${
+                            facilityData.metrics.riskLevel.toLowerCase() === 'high' ? 'text-red-700' :
+                            facilityData.metrics.riskLevel.toLowerCase() === 'medium' ? 'text-yellow-700' :
+                            'text-emerald-700'
+                        }`}>{facilityData.metrics.riskLevel}</Text>
                     </View>
 
+                    {/* Risk Score */}
                     <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-100 pb-4 pl-4 pt-2 pr-2">
                         <View className="flex-row justify-between items-center mb-2">
                             <Text className="text-gray-700">Risk Score</Text>
                             <Feather name="info" size={23} color="#9DA3AE" />
                         </View>
-                        <Text className="text-2xl text-gray-900">{facilityData.metrics.riskScore}</Text>
+                        <Text className="text-2xl text-gray-900">{facilityData.metrics.riskScore.toFixed(2)}</Text>
                     </View>
 
+                    {/* CMS Rating */}
                     <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-100">
                         <View className="flex-row justify-between items-center mb-2">
                             <Text className="text-gray-700">CMS</Text>
-                            <AntDesign name="infocirlceo" size={16} color="#9DA3AE" />
                         </View>
                         <View className="flex-row">
-                            {[...Array(facilityData.metrics.cmsRating)].map((_, index) => (
+                            {[...Array(5)].map((_, index) => (
                                 <AntDesign
-                                    key={`star-${facilityData.name}-${index + 1}`}
+                                    key={index}
                                     name="star"
                                     size={24}
-                                    color="#2E90FA"
+                                    color={index < facilityData.metrics.cmsRating ? "#2E90FA" : "#E5E7EB"}
                                     className="mr-1"
                                 />
                             ))}
@@ -150,16 +164,19 @@ const DashboardFacility = () => {
 
                 {/* Secondary Metrics */}
                 <View className="flex-row gap-4">
+                    {/* Fire Inspections */}
                     <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-100">
                         <Text className="text-gray-700 mb-2">Fire Inspections</Text>
                         <Text className="text-2xl text-gray-900">{facilityData.metrics.fireInspections}</Text>
                     </View>
 
+                    {/* Certified Beds */}
                     <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-100">
                         <Text className="text-gray-700 mb-2">Certified Beds</Text>
                         <Text className="text-2xl text-gray-900">{facilityData.metrics.certifiedBeds}</Text>
                     </View>
 
+                    {/* Citations */}
                     <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-100">
                         <Text className="text-gray-700 mb-2">Citations & Deficiencies</Text>
                         <Text className="text-2xl text-gray-900">{facilityData.metrics.citations}</Text>
@@ -180,7 +197,6 @@ const DashboardFacility = () => {
                             timestamp: new Date()
                         }
                     ]}
-                    assistantAvatar={ImagesPath.USER_AVATAR}
                     userAvatar={ImagesPath.USER_AVATAR}
                 />
             </View>
@@ -223,11 +239,11 @@ const DeficienciesTable = ({ data, currentPage, totalPages, onPageChange }: Defi
                             onPress={() => handleSort('severity')}
                         >
                             <Text className="text-[14px] font-light text-dark-blue text-left">Severity</Text>
-                            <SortIcon
+                            {/* <SortIcon
                                 isSelected={sortState.field === 'severity'}
                                 activeColor="#C5C5C5"
                                 inactiveColor="#C5C5C5"
-                            />
+                            /> */}
                         </TouchableOpacity>
                     </View>
 
@@ -237,11 +253,11 @@ const DeficienciesTable = ({ data, currentPage, totalPages, onPageChange }: Defi
                             onPress={() => handleSort('tag')}
                         >
                             <Text className="text-[14px] font-light text-dark-blue text-left">Tag</Text>
-                            <SortIcon
+                            {/* <SortIcon
                                 isSelected={sortState.field === 'tag'}
                                 activeColor="#C5C5C5"
                                 inactiveColor="#C5C5C5"
-                            />
+                            /> */}
                         </TouchableOpacity>
                     </View>
 
@@ -251,11 +267,11 @@ const DeficienciesTable = ({ data, currentPage, totalPages, onPageChange }: Defi
                             onPress={() => handleSort('date')}
                         >
                             <Text className="text-[14px] font-light text-dark-blue text-left">Date</Text>
-                            <SortIcon
+                            {/* <SortIcon
                                 isSelected={sortState.field === 'date'}
                                 activeColor="#C5C5C5"
                                 inactiveColor="#C5C5C5"
-                            />
+                            /> */}
                         </TouchableOpacity>
                     </View>
 
@@ -265,11 +281,11 @@ const DeficienciesTable = ({ data, currentPage, totalPages, onPageChange }: Defi
                             onPress={() => handleSort('description')}
                         >
                             <Text className="text-[14px] font-light text-dark-blue text-left">Description</Text>
-                            <SortIcon
+                            {/* <SortIcon
                                 isSelected={sortState.field === 'description'}
                                 activeColor="#C5C5C5"
                                 inactiveColor="#C5C5C5"
-                            />
+                            /> */}
                         </TouchableOpacity>
                     </View>
 
@@ -277,42 +293,9 @@ const DeficienciesTable = ({ data, currentPage, totalPages, onPageChange }: Defi
                 </View>
 
                 {/* Table Body */}
-                <ScrollView className="max-h-[500px]">
-                    {data.map((item) => (
-                        <View
-                            key={item.id}
-                            className="flex-row items-center px-6 py-8 border-b border-gray-100"
-                        >
-                            <Text className="w-[100px] text-[14px] font-semibold text-gray-900 text-left">{item.severity}</Text>
-                            <Text className="w-[100px] text-[14px] text-gray-600 text-left">{item.tag}</Text>
-                            <Text className="w-[100px] text-[14px] text-gray-600 text-left">{item.date}</Text>
-                            <View className='flex-1'>
-                                <Text className="w-[400px] pl-4 text-[14px] text-gray-600 pr-4 text-left">{item.description}</Text>
-                            </View>
-                            <View className="w-[300px] flex-row gap-2 justify-end">
-                                {item.hasStandardReport && (
-                                    <TouchableOpacity
-                                        className="border border-gray-200 items-center justify-center rounded-full py-3.5 px-5 hover:bg-dark-blue hover:border-dark-blue group transition-all duration-300 ease-in-out"
-                                        onPress={() => {/* Handle standard report */ }}
-                                    >
-                                        <Text className="text-[14px] text-gray-500 group-hover:text-white transition-colors duration-300 ease-in-out">Standard Report</Text>
-                                    </TouchableOpacity>
-                                )}
-                                {item.hasComplaintReport && (
-                                    <TouchableOpacity
-                                        className="border border-gray-200 items-center justify-center rounded-full py-3.5 px-5 hover:bg-dark-blue hover:border-dark-blue group transition-all duration-300 ease-in-out"
-                                        onPress={() => {/* Handle complaint report */ }}
-                                    >
-                                        <Text className="text-[14px] text-gray-500 group-hover:text-white transition-colors duration-300 ease-in-out">Complaint Report</Text>
-                                    </TouchableOpacity>
-                                )}
-                            </View>
-                        </View>
-                    ))}
-                </ScrollView>
             </View>
             {/* Pagination */}
-            <View className="flex-row items-center justify-between mt-6 px-4">
+            {/* <View className="flex-row items-center justify-between mt-6 px-4">
                 <TouchableOpacity
                     className="flex-row items-center gap-2"
                     onPress={() => onPageChange(currentPage - 1)}
@@ -353,7 +336,7 @@ const DeficienciesTable = ({ data, currentPage, totalPages, onPageChange }: Defi
                     <Text className="text-[14px] font-light text-gray-600">Next</Text>
                     <FontAwesome6 name="angle-right" size={13} className='text-gray-600' />
                 </TouchableOpacity>
-            </View>
+            </View> */}
         </View>
     );
 };

@@ -178,13 +178,13 @@ const Sidebar = forwardRef<View, SidebarProps>(({
                                     selectedItem={selectedItem}
                                     onSelect={onSelectItem}
                                 />
-                                <MenuItem
+                                {/* <MenuItem
                                     id="facility"
                                     icon={<MaterialIcons name="insert-chart-outlined" className='-mr-2 right-1' size={28} />}
                                     label="Facility Insights"
                                     selectedItem={selectedItem}
                                     onSelect={onSelectItem}
-                                />
+                                /> */}
                             </View>
                             <View className="w-full gap-5 pt-4">
                                 {Object.entries(groupConversationsByDate(conversations)).map(([dateGroup, groupConversations]) => (

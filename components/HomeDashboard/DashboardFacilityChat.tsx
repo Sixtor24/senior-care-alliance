@@ -12,11 +12,10 @@ interface Message {
 
 interface DashboardFacilityChatProps {
     initialMessages: Message[];
-    assistantAvatar: any;
     userAvatar: any;
 }
 
-const DashboardFacilityChat = ({ initialMessages, assistantAvatar, userAvatar }: DashboardFacilityChatProps) => {
+const DashboardFacilityChat = ({ initialMessages, userAvatar }: DashboardFacilityChatProps) => {
     const [inputText, setInputText] = useState('');
     const scrollViewRef = useRef<ScrollView>(null);
 
@@ -39,13 +38,6 @@ const DashboardFacilityChat = ({ initialMessages, assistantAvatar, userAvatar }:
                 >
                     <View className='gap-6'>
                         <View className="flex-row items-start">
-                            <View className="w-10 h-10 rounded-full mr-2 overflow-hidden flex-shrink-0 items-center justify-center">
-                                <Image
-                                    source={ImagesPath.USER_AVATAR}
-                                    className="w-full h-full"
-                                    resizeMode="cover"
-                                />
-                            </View>
                             <View className="rounded-2xl bg-gray-200 border max-w-[550px] border-gray-200 p-4">
                                 <Text className="text-[14px] font-light text-gray-900">
                                     Hello, I'm your virtual nursing advisor. This facility is low risk, with only five severe deficiencies noted —specifically related to infection control. While their performance is strong, there's just a little room to improve on staffing. Is there any additional data or reports I can provide for you on Advent Health?
