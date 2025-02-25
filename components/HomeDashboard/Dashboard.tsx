@@ -59,6 +59,7 @@ const Dashboard = ({ isLoading = false }: Omit<DashboardProps, 'conversations'>)
                     menuItems={menuItems}
                 />
                 <ScrollView 
+                    showsVerticalScrollIndicator={false}
                     className="flex-1 px-4 md:px-6 lg:px-8"
                 >
                     {isLoading ? (

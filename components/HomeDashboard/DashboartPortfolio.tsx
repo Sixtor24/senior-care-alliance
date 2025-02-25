@@ -377,11 +377,11 @@ const Portfolio = () => {
                         onPress={() => handleSort('facilityName')}
                     >
                         <Text className="text-[14px] font-light text-dark-blue">Facility name</Text>
-                        <SortIcon 
+                        {/* <SortIcon 
                             isSelected={sortState.field === 'facilityName'}
                             activeColor="#C5C5C5"
                             inactiveColor="#C5C5C5"
-                        />
+                        /> */}
                     </TouchableOpacity>
 
                     <TouchableOpacity 
@@ -389,11 +389,11 @@ const Portfolio = () => {
                         onPress={() => handleSort('address')}
                     >
                         <Text className="text-[14px] font-light text-dark-blue">Address</Text>
-                        <SortIcon 
+                        {/* <SortIcon 
                             isSelected={sortState.field === 'address'}
                             activeColor="#C5C5C5"
                             inactiveColor="#C5C5C5"
-                        />
+                        /> */}
                     </TouchableOpacity>
 
                     <TouchableOpacity 
@@ -401,11 +401,11 @@ const Portfolio = () => {
                         onPress={() => handleSort('premium')}
                     >
                         <Text className="text-[14px] font-light text-dark-blue">Premium</Text>
-                        <SortIcon 
+                        {/* <SortIcon 
                             isSelected={sortState.field === 'premium'}
                             activeColor="#C5C5C5"
                             inactiveColor="#C5C5C5"
-                        />
+                        /> */}
                     </TouchableOpacity>
 
                     <TouchableOpacity 
@@ -413,11 +413,11 @@ const Portfolio = () => {
                         onPress={() => handleSort('riskLevel')}
                     >
                         <Text className="text-[14px] font-light text-dark-blue">Risk Level</Text>
-                        <SortIcon 
+                        {/* <SortIcon 
                             isSelected={sortState.field === 'riskLevel'}
                             activeColor="#C5C5C5"
                             inactiveColor="#C5C5C5"
-                        />
+                        /> */}
                     </TouchableOpacity>
 
                     <View className="w-24" />
