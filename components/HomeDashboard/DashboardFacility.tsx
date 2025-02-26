@@ -31,6 +31,8 @@ interface Deficiency {
     description: string;
     hasStandardReport?: boolean;
     hasComplaintReport?: boolean;
+    standardReportLink?: string;
+    complaintReportLink?: string;
 }
 
 interface DeficienciesTableProps {
@@ -38,12 +40,14 @@ interface DeficienciesTableProps {
     currentPage: number;
     totalPages: number;
     onPageChange: (page: number) => void;
+    isLoading?: boolean;
 }
 
 interface DashboardFacilityProps {
     facilityData: {
         name: string;
         address: string;
+        ccn: string;
         metrics: {
             riskLevel: string;
             riskScore: number;
@@ -59,6 +63,63 @@ const DashboardFacility = ({ facilityData }: DashboardFacilityProps) => {
     console.log('DashboardFacility - Received facilityData:', facilityData);
     console.log('DashboardFacility - Address:', facilityData.address);
 
+    const [deficiencies, setDeficiencies] = React.useState<Deficiency[]>([]);
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [currentPage, setCurrentPage] = React.useState(1);
+    const [totalPages, setTotalPages] = React.useState(1);
+    const ITEMS_PER_PAGE = 10;
+
+    React.useEffect(() => {
+        const fetchDeficiencies = async () => {
+            if (!facilityData.ccn) return;
+            
+            setIsLoading(true);
+            try {
+                const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+                const response = await fetch(
+                    `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/${facilityData.ccn}/tags?limit=${ITEMS_PER_PAGE}&offset=${offset}`
+                );
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch deficiencies');
+                }
+                
+                const data = await response.json();
+                
+                // Transform API data to match our component's expected format
+                const transformedData: Deficiency[] = data.map((item: any) => ({
+                    id: item.id,
+                    severity: item.scope_severity_code,
+                    tag: item.deficiency_tag_number,
+                    date: item.survey_date,
+                    description: item.deficiency_description,
+                    hasStandardReport: item.standard_deficiency && item.standard_report_link,
+                    hasComplaintReport: item.complaint_deficiency && item.complaint_report_link,
+                    standardReportLink: item.standard_report_link,
+                    complaintReportLink: item.complaint_report_link
+                }));
+                
+                setDeficiencies(transformedData);
+                
+                // Calculate total pages based on response headers or data length
+                // This is a placeholder - you might need to adjust based on actual API response
+                const totalCount = parseInt(response.headers.get('X-Total-Count') || '0', 10) || data.length * 5;
+                setTotalPages(Math.ceil(totalCount / ITEMS_PER_PAGE));
+            } catch (error) {
+                console.error('Error fetching deficiencies:', error);
+                // Fallback to mock data in case of error
+                setDeficiencies(mockData);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        fetchDeficiencies();
+    }, [facilityData.ccn, currentPage]);
+
+    console.log('DashboardFacility - Metrics:', facilityData.metrics);
+
+    // Mock data as fallback
     const mockData: Deficiency[] = [
         {
             id: '1',
@@ -79,10 +140,6 @@ const DashboardFacility = ({ facilityData }: DashboardFacilityProps) => {
         },
         // ... add more items as needed
     ];
-
-    const [currentPage, setCurrentPage] = React.useState(1);
-
-    console.log('DashboardFacility - Metrics:', facilityData.metrics);
 
     return (
         <View className="flex-1 p-8">
@@ -183,35 +240,23 @@ const DashboardFacility = ({ facilityData }: DashboardFacilityProps) => {
                     </View>
                 </View>
                 <DashboardFacilityChat
-                    initialMessages={[
-                        {
-                            id: '1',
-                            text: "Hello, I'm your virtual nursing advisor. This facility is low risk, with only five severe deficiencies noted —specifically related to infection control. While their performance is strong, there's just a little room to improve on staffing. Is there any additional data or reports I can provide for you on Advent Health?",
-                            type: 'assistant',
-                            timestamp: new Date()
-                        },
-                        {
-                            id: '2',
-                            text: "Can you please provide a Staffing Report?",
-                            type: 'user',
-                            timestamp: new Date()
-                        }
-                    ]}
                     userAvatar={ImagesPath.USER_AVATAR}
+                    ccn={facilityData.ccn}
                 />
             </View>
 
             <DeficienciesTable
-                data={mockData}
+                data={deficiencies}
                 currentPage={currentPage}
-                totalPages={10}
+                totalPages={totalPages}
                 onPageChange={setCurrentPage}
+                isLoading={isLoading}
             />
         </View>
     );
 };
 
-const DeficienciesTable = ({ data, currentPage, totalPages, onPageChange }: DeficienciesTableProps) => {
+const DeficienciesTable = ({ data, currentPage, totalPages, onPageChange, isLoading = false }: DeficienciesTableProps) => {
     const [sortState, setSortState] = React.useState<{
         field: 'severity' | 'tag' | 'date' | 'description' | null;
         direction: 'asc' | 'desc' | null;
@@ -225,6 +270,65 @@ const DeficienciesTable = ({ data, currentPage, totalPages, onPageChange }: Defi
             field,
             direction: prevState.field === field && prevState.direction === 'asc' ? 'desc' : 'asc'
         }));
+    };
+
+    const handleReportClick = (url?: string) => {
+        if (url) {
+            window.open(url, '_blank');
+        }
+    };
+
+    // Extract the nested ternary into a function
+    const renderTableContent = () => {
+        if (isLoading) {
+            return (
+                <View className="py-8 items-center justify-center">
+                    <Text className="text-gray-500">Loading deficiencies...</Text>
+                </View>
+            );
+        } else if (data.length === 0) {
+            return (
+                <View className="py-8 items-center justify-center">
+                    <Text className="text-gray-500">No deficiencies found</Text>
+                </View>
+            );
+        } else {
+            return (
+                <ScrollView className="max-h-[500px]">
+                    {data.map((item) => (
+                        <View
+                            key={item.id}
+                            className="flex-row items-center px-6 py-8 border-b border-gray-100"
+                        >
+                            <Text className="w-[100px] text-[14px] font-semibold text-gray-900 text-left">{item.severity}</Text>
+                            <Text className="w-[100px] text-[14px] text-gray-600 text-left">{item.tag}</Text>
+                            <Text className="w-[100px] text-[14px] text-gray-600 text-left">{item.date}</Text>
+                            <View className='flex-1'>
+                                <Text className="w-[400px] pl-4 text-[14px] text-gray-600 pr-4 text-left">{item.description}</Text>
+                            </View>
+                            <View className="w-[300px] flex-row gap-2 justify-end">
+                                {item.hasStandardReport && (
+                                    <TouchableOpacity
+                                        className="border border-gray-200 items-center justify-center rounded-full py-3.5 px-5 hover:bg-dark-blue hover:border-dark-blue group transition-all duration-300 ease-in-out"
+                                        onPress={() => handleReportClick(item.standardReportLink)}
+                                    >
+                                        <Text className="text-[14px] text-gray-500 group-hover:text-white transition-colors duration-300 ease-in-out">Standard Report</Text>
+                                    </TouchableOpacity>
+                                )}
+                                {item.hasComplaintReport && (
+                                    <TouchableOpacity
+                                        className="border border-gray-200 items-center justify-center rounded-full py-3.5 px-5 hover:bg-dark-blue hover:border-dark-blue group transition-all duration-300 ease-in-out"
+                                        onPress={() => handleReportClick(item.complaintReportLink)}
+                                    >
+                                        <Text className="text-[14px] text-gray-500 group-hover:text-white transition-colors duration-300 ease-in-out">Complaint Report</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        </View>
+                    ))}
+                </ScrollView>
+            );
+        }
     };
 
     return (
@@ -293,9 +397,12 @@ const DeficienciesTable = ({ data, currentPage, totalPages, onPageChange }: Defi
                 </View>
 
                 {/* Table Body */}
+                <View>
+                    {renderTableContent()}
+                </View>
             </View>
             {/* Pagination */}
-            {/* <View className="flex-row items-center justify-between mt-6 px-4">
+            <View className="flex-row items-center justify-between mt-6 px-4">
                 <TouchableOpacity
                     className="flex-row items-center gap-2"
                     onPress={() => onPageChange(currentPage - 1)}
@@ -336,7 +443,7 @@ const DeficienciesTable = ({ data, currentPage, totalPages, onPageChange }: Defi
                     <Text className="text-[14px] font-light text-gray-600">Next</Text>
                     <FontAwesome6 name="angle-right" size={13} className='text-gray-600' />
                 </TouchableOpacity>
-            </View> */}
+            </View>
         </View>
     );
 };

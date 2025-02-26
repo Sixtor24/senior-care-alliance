@@ -380,6 +380,7 @@ const Portfolio = ({ onChangeView, onSelectFacility }: DashboardProps) => {
             const facilityData = {
                 name: facility.facilityName,
                 address: formatAddress(facility),
+                ccn: facility.ccn,
                 metrics: {
                     riskLevel: insightsData.risk_mitigation_level || 'N/A',
                     riskScore: Number(insightsData.risk_mitigation_score) || 0,
@@ -403,6 +404,7 @@ const Portfolio = ({ onChangeView, onSelectFacility }: DashboardProps) => {
             onSelectFacility({
                 name: facility.facilityName,
                 address: formatAddress(facility),
+                ccn: facility.ccn,
                 metrics: {
                     riskLevel: 'N/A',
                     riskScore: 0,
