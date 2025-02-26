@@ -88,6 +88,9 @@ const DashboardFacilityChat = ({ userAvatar, ccn }: DashboardFacilityChatProps) 
     const handleSend = async () => {
         if (!inputText.trim() || isLoading) return;
 
+        // Log para verificar el threadId actual
+        console.log('Current threadId:', threadId);
+
         // Add user's message to the messages
         const userMessage: Message = {
             id: new Date().toISOString(),
@@ -100,6 +103,9 @@ const DashboardFacilityChat = ({ userAvatar, ccn }: DashboardFacilityChatProps) 
         setIsLoading(true);
         
         try {
+            // Log para verificar el mensaje enviado
+            console.log('Sending message:', inputText);
+
             // Make API call to get real response using the new endpoint
             const response = await fetch('https://sca-api-535434239234.us-central1.run.app/agents/facility/chat', {
                 method: 'POST',
@@ -121,9 +127,13 @@ const DashboardFacilityChat = ({ userAvatar, ccn }: DashboardFacilityChatProps) 
             
             const data = await response.json();
             
+            // Log para verificar la respuesta del bot
+            console.log('Bot response data:', data);
+
             // Save the thread_id for future messages
             if (data.thread_id) {
                 setThreadId(data.thread_id);
+                console.log('Updated threadId:', data.thread_id);
             }
             
             // Add bot response from API

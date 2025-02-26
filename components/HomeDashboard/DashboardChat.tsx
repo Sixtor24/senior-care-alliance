@@ -1,9 +1,8 @@
 import ImagesPath from '@/assets/ImagesPath';
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Platform, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Platform, TextInputKeyPressEventData, NativeSyntheticEvent, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
 import { useChat } from '@/hooks/useChat';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { NativeSyntheticEvent, TextInputKeyPressEventData } from 'react-native';
 import { DashboardChatProps, Message } from '@/types/chat';
 import AssistanceMessage from '../ui/AssistanceMessage';
 import axios from 'axios';
@@ -13,6 +12,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sca-api-535434239234
 const { height } = Dimensions.get('window');
 const maxHeight = height * 0.65;
 
+// Define a more specific message type that includes thread_id
+type ChatMessage = Message & {
+    thread_id?: string;
+    bigQueryData?: any;
+}
+
 const DashboardChat = ({
     title = "What can we help with?",
     placeholder = "What would you like to know about risk and trends in senior care facilities?",
@@ -21,28 +26,37 @@ const DashboardChat = ({
     loadConversation,
     isLoading,
     error: errorProp,
-    threadId,
+    threadId: externalThreadId,
 }: DashboardChatProps & { threadId?: string }) => {
-    const { messages, sendMessage, isLoading: isSending, setMessages } = useChat();
+    const { messages, sendMessage, isLoading: isSending, setMessages, threadId: chatThreadId, setThreadId } = useChat();
     const [inputText, setInputText] = useState('');
     const [error, setError] = useState('');
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+    const [displayThreadId, setDisplayThreadId] = useState<string | undefined>(externalThreadId || chatThreadId);
     const scrollViewRef = useRef<ScrollView>(null);
 
-    console.log('DashboardChat Props:', {
-        title,
-        isLoading,
-        error,
-        messagesCount: messages?.length,
-        messages,
-        hasLoadConversation: !!loadConversation
-    });
+    // Set chat thread ID from external thread ID on initial load
+    useEffect(() => {
+        if (externalThreadId && setThreadId) {
+            console.log('Setting initial thread ID from external source:', externalThreadId);
+            setThreadId(externalThreadId);
+        }
+    }, [externalThreadId]);
+
+    // Track thread_id changes from both sources
+    useEffect(() => {
+        const newThreadId = externalThreadId || chatThreadId;
+        if (newThreadId !== displayThreadId) {
+            console.log('Thread ID Changed:', { previous: displayThreadId, new: newThreadId });
+            setDisplayThreadId(newThreadId);
+        }
+    }, [externalThreadId, chatThreadId]);
 
     useEffect(() => {
-        if (threadId) {
-            loadConversationMessages(threadId);
+        if (externalThreadId) {
+            loadConversationMessages(externalThreadId);
         }
-    }, [threadId]);  // Add threadId to dependencies
+    }, [externalThreadId]);  // Dependency on externalThreadId
 
     const loadConversationMessages = async (conversationId: string) => {
         console.log('Starting to load messages for conversation:', conversationId);
@@ -86,8 +100,20 @@ const DashboardChat = ({
         try {
             setError('');
             console.log('Attempting to send message:', inputText);
-            const response = await sendMessage(inputText);
-            console.log('Message sent successfully:', response);
+            console.log('Current thread ID before sending:', displayThreadId);
+            
+            // Log thread continuity information
+            if (displayThreadId) {
+                console.log('✓ Continuing conversation with same thread ID:', displayThreadId);
+            } else {
+                console.log('Starting new conversation thread');
+            }
+            
+            await sendMessage(inputText);
+            
+            // The thread ID is tracked in the useChat hook
+            // We'll get it in the next render via useEffect
+            
             setInputText('');
             scrollViewRef.current?.scrollToEnd({ animated: true });
 
@@ -106,7 +132,8 @@ const DashboardChat = ({
     };
 
 
-    const renderMessage = (message: any, threadId: string) => {
+    const renderMessage = (message: ChatMessage, threadId: string) => {
+        
         return (
             <View
                 key={message.id}
@@ -119,9 +146,11 @@ const DashboardChat = ({
                         }`}
                 >
                     {message.type === 'user' ? (
-                        <Text className="text-[14px] font-light text-white">
-                            {message.text}
-                        </Text>
+                        <View>
+                            <Text className="text-[14px] font-light text-white">
+                                {message.text}
+                            </Text>
+                        </View>
                     ) : (
                         <AssistanceMessage message={message} threadId={threadId} />
                     )}
@@ -139,36 +168,46 @@ const DashboardChat = ({
         );
     };
 
+    const renderContent = () => {
+        if (isLoadingHistory) {
+            return (
+                <View className="flex-1 items-center justify-center">
+                    <ActivityIndicator size="large" color="#0000ff" />
+                    <Text className="mt-2">Loading conversation...</Text>
+                </View>
+            );
+        } else if (messages.length === 0) {
+            return (
+                <Text className="text-2xl md:text-3xl lg:text-4xl font-extralight text-dark-blue text-center">
+                    {title}
+                </Text>
+            );
+        } else {
+            return (
+                <ScrollView
+                    ref={scrollViewRef}
+                    className="w-full p-8 pb-20"
+                    showsVerticalScrollIndicator={false}
+                    style={{ maxHeight }}
+                >
+                    <Animated.View
+                        entering={FadeIn.duration(400)}
+                        className="flex-row items-start mb-4"
+                    >
+                        <View className='gap-6 px-12 w-full'>
+                            {messages.map((message) => renderMessage(message as ChatMessage, displayThreadId ?? ''))}
+                        </View>
+                    </Animated.View>
+                </ScrollView>
+            );
+        }
+    };
+
     return (
         <View className={`flex flex-col h-full ${messages.length === 0 ? 'justify-center top-48 gap-10' : ''}`}>
             {/* Chat Messages Area */}
             <View className={`${messages.length === 0 ? 'flex items-center justify-center' : 'flex-1 overflow-hidden'}`}>
-                {isLoadingHistory ? (
-                    <View className="flex-1 items-center justify-center">
-                        <ActivityIndicator size="large" color="#0000ff" />
-                        <Text className="mt-2">Loading conversation...</Text>
-                    </View>
-                ) : messages.length === 0 ? (
-                    <Text className="text-2xl md:text-3xl lg:text-4xl font-extralight text-dark-blue text-center">
-                        {title}
-                    </Text>
-                ) : (
-                    <ScrollView
-                        ref={scrollViewRef}
-                        className="w-full p-8 pb-20"
-                        showsVerticalScrollIndicator={false}
-                        style={{ maxHeight }}
-                    >
-                        <Animated.View
-                            entering={FadeIn.duration(400)}
-                            className="flex-row items-start mb-4"
-                        >
-                            <View className='gap-6 px-12 w-full'>
-                                {messages.map((message) => renderMessage(message, threadId || ''))}
-                            </View>
-                        </Animated.View>
-                    </ScrollView>
-                )}
+                {renderContent()}
             </View>
 
             {/* Input Area - Always fixed at bottom */}

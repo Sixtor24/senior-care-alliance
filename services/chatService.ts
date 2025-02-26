@@ -13,6 +13,12 @@ class ChatService {
                     'accept': 'application/json'
                 }
             });
+            
+            console.log('API Response:', response.data); // Log the entire response
+
+            const allSameThreadId = response.data.length === 0 || response.data.every(conversation => (conversation as any).thread_id !== undefined && (conversation as any).thread_id === (response.data[0] as any).thread_id);
+            console.log('Todos los thread_id son iguales:', allSameThreadId);
+
             return response.data; // Solo devolver la respuesta de la API
         } catch (error) {
             console.error('Error fetching conversations:', error);
@@ -40,17 +46,25 @@ class ChatService {
         }
     }
 
-    async sendMessage(message: string): Promise<ChatResponse> {
+    async sendMessage(message: string, threadId?: string): Promise<ChatResponse> {
         if (!message || typeof message !== 'string') {
             throw new Error('Invalid message format');
         }
 
         try {
+            const payload: any = {
+                message: message.trim(),
+            };
+
+            // Include thread_id in payload if available to maintain the conversation thread
+            if (threadId) {
+                payload.thread_id = threadId;
+                console.log('Continuing conversation with thread_id:', threadId);
+            }
+
             const response = await axios.post<ChatResponse>(
                 `${this.API_URL}/agents/chat`,
-                {
-                    message: message.trim(),
-                },
+                payload,
                 {
                     headers: {
                         'Content-Type': 'application/json',

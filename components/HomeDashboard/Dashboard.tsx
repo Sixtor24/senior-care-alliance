@@ -36,6 +36,7 @@ const Dashboard = ({ isLoading = false }: Omit<DashboardProps, 'conversations'>)
     };
 
     const handleSelectThread = (threadId: string) => {
+        console.log('Selected thread ID:', threadId);
         setSelectedThreadId(threadId);
         setActiveView('chat'); // Ensure the chat view is active
     };

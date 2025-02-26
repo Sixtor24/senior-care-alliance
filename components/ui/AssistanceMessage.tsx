@@ -136,19 +136,18 @@ const AssistanceMessage = ({ message, threadId }: AssistanceMessageProps) => {
             </View>
         );
     };
-
-    console.log('Mostrar mensaje:', message.text, message.bigQueryData, 'Thread ID:', threadId);
+    
+    // Get thread_id from either the message or the threadId prop
+    
     return (
         <View>
-            <View className='mb-6'>
+            <View>
                 {formatMarkdownContent(message.text, message)}
             </View>
             {hasStructuredData(message) && (
-                <>
-                    <View>
-                        {renderDynamicTable(message.bigQueryData)}
-                    </View>
-                </>
+                <View className='gap-3'>
+                    {renderDynamicTable(message.bigQueryData)}
+                </View>
             )}
         </View>
     )

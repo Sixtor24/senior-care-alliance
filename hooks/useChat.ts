@@ -29,7 +29,7 @@ export const useChat = () => {
 
             setMessages(prev => [...prev, userMessage]);
 
-            const response = await chatService.sendMessage(text);
+            const response = await chatService.sendMessage(text, threadId);
             console.log('useChat: Received API response:', {
                 hasResponse: !!response.response,
                 threadId: response.thread_id,
@@ -76,6 +76,7 @@ export const useChat = () => {
         error,
         sendMessage,
         clearChat,
-        threadId
+        threadId,
+        setThreadId
     };
 }; 
