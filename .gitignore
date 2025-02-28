@@ -1,0 +1,31 @@
+# React Native Web project .gitignore
+
+# Node modules
+node_modules/
+
+# Build artifacts
+build/
+dist/
+
+# React Native Web specific
+web-build/
+web-dist/
+
+# iOS and Android build artifacts
+ios/build/
+android/app/build/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Other
+*.env
+*.env.*
