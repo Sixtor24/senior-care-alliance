@@ -5,7 +5,7 @@ import { router } from "expo-router";
 export default function IndexRedirect() {
   useEffect(() => {
     // Redireccionar a login.tsx
-    router.replace("/(login)/login");
+    router.replace("/login");
   }, []);
 
   // Mostrar un indicador de carga mientras se redirecciona

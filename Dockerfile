@@ -19,7 +19,11 @@ FROM nginx:alpine
 # Copy the built static files from the builder stage to Nginx's html directory
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Copy the custom Nginx config file into the container
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # Expose the default Nginx port
 EXPOSE 80
 
+# Run Nginx in the foreground
 CMD ["nginx", "-g", "daemon off;"]
