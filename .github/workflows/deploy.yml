@@ -35,11 +35,11 @@ jobs:
         run: |-
           gcloud auth configure-docker ${{ secrets.SCA_APP_AR_REGION }}-docker.pkg.dev --quiet
 
-      # - name: Make envfile
-      #   run: |
-      #     touch .env
-      #     echo "${{ secrets.SCA_APP_ENV }}" > .env
-      #     cat .env
+      - name: Make envfile
+        run: |
+          touch .env
+          echo "${{ secrets.SCA_APP_ENV }}" > .env
+          cat .env
         
       - name: "Build image"
         run: docker build -t ${{ secrets.SCA_APP_AR_LOCATION }}:$GITHUB_SHA .
