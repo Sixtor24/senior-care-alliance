@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Platform, ActivityIndicator, Alert } from "react-native";
 import useFormStore from "../../store/formStore";
 import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
+import { API_URL } from "@/services/api";
 
 interface QuestionsFormProps {
     onBack: () => void;
@@ -222,7 +223,7 @@ const QuestionsForm: React.FC<QuestionsFormProps> = ({ onBack, onNext, onError }
         try {
             console.log("Final submission to API with all accumulated data:", userData);
             
-            const response = await fetch('https://sca-api-535434239234.us-central1.run.app/organizations', {
+            const response = await fetch(`${API_URL}/organizations`, {
                 method: 'POST',
                 headers: {
                     'accept': 'application/json',

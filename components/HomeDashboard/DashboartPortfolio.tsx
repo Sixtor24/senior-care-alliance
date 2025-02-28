@@ -6,6 +6,8 @@ import { debounce } from 'lodash';
 import Modal from 'react-native-modal';
 import { ActiveView } from '../Sidebar';
 
+import { API_URL } from '@/services/api';
+
 // Types that would match your API response
 interface Facility {
     ccn: string;
@@ -99,7 +101,7 @@ const Portfolio = ({ onChangeView, onSelectFacility }: DashboardProps) => {
         try {
             setTableLoading(true);
             const response = await fetch(
-                `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/${ccn}`,
+                `${API_URL}/portfolios/facilities/${ccn}`,
                 {
                     method: 'DELETE',
                 }
@@ -140,7 +142,7 @@ const Portfolio = ({ onChangeView, onSelectFacility }: DashboardProps) => {
             console.log()
             setTableLoading(true);
             const response = await fetch(
-                `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities`
+                `${API_URL}/portfolios/facilities`
             );
             const data = await response.json();
             
@@ -186,7 +188,7 @@ const Portfolio = ({ onChangeView, onSelectFacility }: DashboardProps) => {
         try {
             setLoading(true);
             const response = await fetch(
-                `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/search?${isFavoriteSearch ? `portfolio_id=${PORTFOLIO_ID}&` : ''}search_term=${encodeURIComponent(text)}&limit=10&offset=0`
+                `${API_URL}/portfolios/facilities/search?${isFavoriteSearch ? `portfolio_id=${PORTFOLIO_ID}&` : ''}search_term=${encodeURIComponent(text)}&limit=10&offset=0`
             );
 
             if (!response.ok) {
@@ -232,7 +234,7 @@ const Portfolio = ({ onChangeView, onSelectFacility }: DashboardProps) => {
             setTableLoading(true);
             
             const response = await fetch(
-                `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/${ccn}/premium?premium=${formattedPremium}`,
+                `${API_URL}/portfolios/facilities/${ccn}/premium?premium=${formattedPremium}`,
                 {
                     method: 'PUT',
                     headers: {
@@ -275,7 +277,7 @@ const Portfolio = ({ onChangeView, onSelectFacility }: DashboardProps) => {
             }
 
             const response = await fetch(
-                `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/search?portfolio_id=${PORTFOLIO_ID}&search_term=${encodeURIComponent(text)}`
+                `${API_URL}/portfolios/facilities/search?portfolio_id=${PORTFOLIO_ID}&search_term=${encodeURIComponent(text)}`
             );
 
             if (!response.ok) {
@@ -330,7 +332,7 @@ const Portfolio = ({ onChangeView, onSelectFacility }: DashboardProps) => {
             setSavingItems(prev => new Set(prev).add(ccn));
 
             const response = await fetch(
-                `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/${ccn}`,
+                `${API_URL}/portfolios/facilities/${ccn}`,
                 {
                     method: 'POST',
                     headers: {
@@ -367,7 +369,7 @@ const Portfolio = ({ onChangeView, onSelectFacility }: DashboardProps) => {
     const handleFacilityClick = async (facility: Facility) => {
         try {
             const insightsResponse = await fetch(
-                `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/${facility.ccn}/insights`
+                `${API_URL}/portfolios/facilities/${facility.ccn}/insights`
             );
             
             if (!insightsResponse.ok) {

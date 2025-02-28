@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+import { API_URL } from '@/services/api';
+
 interface FormState {
   // Form data
   email: string;
@@ -81,7 +83,7 @@ const useFormStore = create<FormState>((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      const response = await fetch('https://sca-api-535434239234.us-central1.run.app/users/email', {
+      const response = await fetch(`${API_URL}/users/email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -118,7 +120,7 @@ const useFormStore = create<FormState>((set, get) => ({
         // const url = `https://sca-api-535434239234.us-central1.run.app/users/email/otp?email=${encodeURIComponent(email)}&otp=916363`;
       // Siempre usamos el código fijo 916363 en lugar del parámetro code
       const fixedCode = '916363';
-      const url = `https://sca-api-535434239234.us-central1.run.app/users/email/otp?email=${encodeURIComponent(email)}&otp=${fixedCode}`;
+      const url = `${API_URL}/users/email/otp?email=${encodeURIComponent(email)}&otp=${fixedCode}`;
       const response = await fetch(url);
       
       if (!response.ok) {

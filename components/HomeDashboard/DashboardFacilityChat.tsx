@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, Dimensions, ScrollView, Image,
 import Animated, { FadeIn } from 'react-native-reanimated';
 import ImagesPath from '@/assets/ImagesPath';
 
+import { API_URL } from '@/services/api';
+
 const { height } = Dimensions.get('window');
 const maxHeight = height * 0.65;
 
@@ -107,7 +109,7 @@ const DashboardFacilityChat = ({ userAvatar, ccn }: DashboardFacilityChatProps) 
             console.log('Sending message:', inputText);
 
             // Make API call to get real response using the new endpoint
-            const response = await fetch('https://sca-api-535434239234.us-central1.run.app/agents/facility/chat', {
+            const response = await fetch(`${API_URL}/agents/facility/chat`, {
                 method: 'POST',
                 headers: {
                     'accept': 'application/json',

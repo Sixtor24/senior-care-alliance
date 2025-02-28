@@ -5,9 +5,10 @@ import { Conversation, SidebarProps } from '../types/chat';
 import LoadingSkeleton from './ui/LoadingSkeleton';
 import axios from 'axios';
 
+import { API_URL } from '@/services/api';
+
 export type ActiveView = 'chat' | 'portfolio' | 'facility';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sca-api-535434239234.us-central1.run.app';
 
 
 const ConversationSkeleton = () => (

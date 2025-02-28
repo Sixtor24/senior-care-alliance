@@ -1,10 +1,11 @@
 import { ChatItem, ChatMessage, ChatResponse, Conversation, Message, SaveChatParams, ThreadHistoryResponse } from "@/types/chat";
 import axios from 'axios';
 
-const API_BASE_URL = 'https://sca-api-535434239234.us-central1.run.app';
+import { API_URL } from "./api";
+
 
 class ChatService {
-    private readonly API_URL = process.env.NEXT_PUBLIC_API_URL || API_BASE_URL;
+    private readonly API_URL = API_URL;
 
     async getConversations(): Promise<Conversation[]> {
         try {

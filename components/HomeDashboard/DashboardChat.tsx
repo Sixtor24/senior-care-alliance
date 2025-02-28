@@ -6,8 +6,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { DashboardChatProps, Message } from '@/types/chat';
 import AssistanceMessage from '../ui/AssistanceMessage';
 import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sca-api-535434239234.us-central1.run.app';
+import { API_URL } from '@/services/api';
 
 const { height } = Dimensions.get('window');
 const maxHeight = height * 0.65;

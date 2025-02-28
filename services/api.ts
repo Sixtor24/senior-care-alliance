@@ -1,0 +1,1 @@
+export const API_URL = 'https://sca-api-535434239234.us-central1.run.app';

@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform } from 'r
 import { AntDesign, Feather, FontAwesome6 } from '@expo/vector-icons';
 import DashboardFacilityChat from './DashboardFacilityChat';
 import ImagesPath from '@/assets/ImagesPath';
-import SortIcon from '../ui/SortIcon';
+import { API_URL } from '@/services/api';
 
 interface FacilityData {
     name: string;
@@ -77,7 +77,7 @@ const DashboardFacility = ({ facilityData }: DashboardFacilityProps) => {
             try {
                 const offset = (currentPage - 1) * ITEMS_PER_PAGE;
                 const response = await fetch(
-                    `https://sca-api-535434239234.us-central1.run.app/portfolios/facilities/${facilityData.ccn}/tags?limit=${ITEMS_PER_PAGE}&offset=${offset}`
+                    `${API_URL}/portfolios/facilities/${facilityData.ccn}/tags?limit=${ITEMS_PER_PAGE}&offset=${offset}`
                 );
                 
                 if (!response.ok) {
