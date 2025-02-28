@@ -72,7 +72,7 @@ const QuestionsForm: React.FC<QuestionsFormProps> = ({ onBack, onNext }) => {
                 return (
                     <Animated.View 
                         key="step1"
-                        entering={FadeInDown.duration(500).delay(100)} 
+                        entering={FadeInDown.duration(500)} 
                         exiting={FadeOut.duration(300)}
                         className="w-full"
                     >
@@ -114,7 +114,7 @@ const QuestionsForm: React.FC<QuestionsFormProps> = ({ onBack, onNext }) => {
                 return (
                     <Animated.View 
                         key="step2"
-                        entering={FadeInDown.duration(500).delay(100)} 
+                        entering={FadeInDown.duration(500)} 
                         exiting={FadeOut.duration(300)}
                         className="w-full"
                     >
@@ -154,7 +154,7 @@ const QuestionsForm: React.FC<QuestionsFormProps> = ({ onBack, onNext }) => {
                 return (
                     <Animated.View 
                         key="step3"
-                        entering={FadeInDown.duration(500).delay(100)} 
+                        entering={FadeInDown.duration(500)} 
                         exiting={FadeOut.duration(300)}
                         className="w-full"
                     >
@@ -177,7 +177,7 @@ const QuestionsForm: React.FC<QuestionsFormProps> = ({ onBack, onNext }) => {
                                         handleNext();
                                     }}
                                 >
-                                    <Text className={`font-medium ${orgType === type ? 'text-dark-blue' : 'text-white'}`}>
+                                    <Text className={`font-medium text-white`}>
                                         {type}
                                     </Text>
                                 </TouchableOpacity>
@@ -190,7 +190,7 @@ const QuestionsForm: React.FC<QuestionsFormProps> = ({ onBack, onNext }) => {
                 return (
                     <Animated.View 
                         key="step4"
-                        entering={FadeInDown.duration(500).delay(100)} 
+                        entering={FadeInDown.duration(500)} 
                         exiting={FadeOut.duration(300)}
                         className="w-full"
                     >
@@ -213,7 +213,7 @@ const QuestionsForm: React.FC<QuestionsFormProps> = ({ onBack, onNext }) => {
                                         handleNext();
                                     }}
                                 >
-                                    <Text className={`font-medium ${role === roleOption ? 'text-dark-blue' : 'text-white'}`}>
+                                    <Text className={`font-medium text-white`}>
                                         {roleOption}
                                     </Text>
                                 </TouchableOpacity>
@@ -226,7 +226,7 @@ const QuestionsForm: React.FC<QuestionsFormProps> = ({ onBack, onNext }) => {
                 return (
                     <Animated.View 
                         key="step5"
-                        entering={FadeInDown.duration(500).delay(100)} 
+                        entering={FadeInDown.duration(500)} 
                         exiting={FadeOut.duration(300)}
                         className="w-full"
                     >
@@ -268,7 +268,7 @@ const QuestionsForm: React.FC<QuestionsFormProps> = ({ onBack, onNext }) => {
                 return (
                     <Animated.View 
                         key="step6"
-                        entering={FadeInDown.duration(500).delay(100)} 
+                        entering={FadeInDown.duration(500)} 
                         exiting={FadeOut.duration(300)}
                         className="w-full"
                     >

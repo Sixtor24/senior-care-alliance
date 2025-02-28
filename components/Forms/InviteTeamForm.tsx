@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Platform, ScrollView } from "r
 import useFormStore from "../../store/formStore";
 import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 interface InviteTeamFormProps {
     onBack: () => void;
@@ -33,6 +34,14 @@ const InviteTeamForm: React.FC<InviteTeamFormProps> = ({ onBack, onNext }) => {
             inviteMessage 
         });
         onNext();
+        
+        // Recargar la página completa en lugar de usar router
+        if (Platform.OS === 'web') {
+            window.location.reload();
+        } else {
+            // Fallback para dispositivos móviles
+            router.replace("/");
+        }
     };
 
     const addEmailChip = (email: string) => {
@@ -103,7 +112,13 @@ const InviteTeamForm: React.FC<InviteTeamFormProps> = ({ onBack, onNext }) => {
                         style={[Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)]}
                     />
                     
-                    <View className="flex-row justify-end mt-3 w-full">
+                    <View className="flex-row justify-end gap-5 mt-3 w-full">
+                        <TouchableOpacity
+                            className="px-5 border border-white/25 text-sm font-semibold py-3 rounded-lg"
+                            onPress={handleNext}
+                        >
+                            <Text className="text-white font-normal">Skip</Text>
+                        </TouchableOpacity>
                         <TouchableOpacity
                             className="bg-white px-5 text-sm font-semibold text-dark-blue py-3 rounded-lg"
                             onPress={handleNext}

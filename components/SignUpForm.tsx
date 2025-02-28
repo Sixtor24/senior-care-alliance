@@ -35,32 +35,22 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ onStepChange }) => {
                     </Animated.View>
                 )}
                 {step === 2 && (
-                    <Animated.View 
-                        entering={FadeInDown.duration(400)}
-                        key="verification-form"
-                    >
+                    
                         <VerificationForm
                             onBack={prevStep}
                             onNext={nextStep}
                         />
-                    </Animated.View>
                 )}
                 {step === 3 && (
-                    <Animated.View 
-                        entering={FadeInDown.duration(400).springify().delay(100)}
-                        exiting={FadeOut.duration(250)}
-                        key="questions-form-1"
-                    >
                         <QuestionsForm
                             onBack={prevStep}
                             onNext={nextStep}
                         />
-                    </Animated.View>
                 )}
-                {step === 4 && (
+                {/* {step === 4 && (
                     <Animated.View 
                         entering={FadeInDown.duration(400).springify().delay(100)}
-                        exiting={FadeOut.duration(250)}
+                        exiting={FadeOut.duration(300)}
                         key="organization-link-form"
                     >
                         <OrganizationLinkForm
@@ -68,11 +58,11 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ onStepChange }) => {
                             onNext={nextStep}
                         />
                     </Animated.View>
-                )}
-                {step === 5 && (
+                )} */}
+                {step === 4 && (
                     <Animated.View 
-                        entering={FadeInDown.duration(400).springify().delay(100)}
-                        exiting={FadeOut.duration(250)}
+                        entering={FadeInDown.duration(400).springify()}
+                        exiting={FadeOut.duration(300)}
                         key="invite-team-form"
                     >
                         <InviteTeamForm

@@ -19,6 +19,7 @@ const SecondValidationEmailForm: React.FC<{
 }> = ({ onBack, onNext }) => {
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const handleVerify = () => {
     if (!inputValue.trim()) {
@@ -26,20 +27,21 @@ const SecondValidationEmailForm: React.FC<{
       return;
     }
     
-    // Cualquiera de estas opciones:
+    // Verificamos si el código es correcto (916363)
+    if (inputValue.trim() !== '916363') {
+      setError('Invalid verification code. Please try again.');
+      return;
+    }
     
-    // Opción 1: Aceptar cualquier código (quitar validación)
+    // Iniciamos el proceso de verificación
+    setIsVerifying(true);
     setError(null);
-    onNext();
     
-    // Opción 2: Cambia el código predeterminado a uno que prefieras
-    // const validCode = "tu_codigo_aqui"; // Reemplaza "tu_codigo_aqui" con tu código deseado
-    // if (inputValue.trim() !== validCode) {
-    //   setError('Invalid verification code');
-    //   return;
-    // }
-    // setError(null);
-    // onNext();
+    // Esperamos 2 segundos antes de continuar
+    setTimeout(() => {
+      setIsVerifying(false);
+      onNext();
+    }, 2000);
   };
 
   return (
@@ -75,8 +77,16 @@ const SecondValidationEmailForm: React.FC<{
             <TouchableOpacity
               className="bg-white px-5 text-sm font-semibold text-dark-blue py-3 rounded-lg"
               onPress={handleVerify}
+              disabled={isVerifying}
             >
-              <Text className="text-dark-blue font-semibold">Verify email address</Text>
+              {isVerifying ? (
+                <View className="flex-row items-center">
+                  <ActivityIndicator size="small" color="#105cb4" />
+                  <Text className="text-dark-blue font-semibold ml-2">Verifying...</Text>
+                </View>
+              ) : (
+                <Text className="text-dark-blue font-semibold">Verify email address</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -142,7 +152,6 @@ const EmailForm: React.FC<RegistrationFormProps> = ({ onNext, formData }) => {
         <Animated.View 
           key={`form-${fadeKey}`} 
           entering={FadeInDown} 
-          exiting={FadeOut.delay(200)}
         >
           <View className="flex-row gap-x-2 items-center">
             <Image source={ImagesPath.DITA_LOGO} className="w-1/2 aspect-square py-10" resizeMode="contain" />
@@ -191,7 +200,7 @@ const EmailForm: React.FC<RegistrationFormProps> = ({ onNext, formData }) => {
       ) : (
         <Animated.View 
           key={fadeKey} 
-          entering={FadeInDown.delay(200)}
+          entering={FadeInDown.delay(300)}
           style={{ opacity: isExiting ? 0 : 1 }}
         >
           <SecondValidationEmailForm 
