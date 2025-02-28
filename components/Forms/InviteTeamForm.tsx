@@ -35,11 +35,11 @@ const InviteTeamForm: React.FC<InviteTeamFormProps> = ({ onBack, onNext }) => {
         });
         onNext();
         
-        // Recargar la página completa en lugar de usar router
+        // Web-specific solution
         if (Platform.OS === 'web') {
-            window.location.reload();
+            // Force navigation to the specific route
+            window.location.pathname = '/';
         } else {
-            // Fallback para dispositivos móviles
             router.replace("/");
         }
     };
