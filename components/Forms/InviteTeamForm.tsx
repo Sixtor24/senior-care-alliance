@@ -35,11 +35,11 @@ const InviteTeamForm: React.FC<InviteTeamFormProps> = ({ onBack, onNext }) => {
         });
         onNext();
         
-        // Recargar la página completa en lugar de usar router
+        // For web platform, completely reload and navigate to root
         if (Platform.OS === 'web') {
-            window.location.reload();
+            // This will cause a full page reload and navigation to root
+            window.location.href = '/';
         } else {
-            // Fallback para dispositivos móviles
             router.replace("/");
         }
     };
