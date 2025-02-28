@@ -59,8 +59,6 @@ const NumberForm: React.FC<NumberFormProps> = ({ onBack, onNext }) => {
         console.log("Validating phone number:", fullPhoneNumber);
         
         try {
-            // Usamos directamente el número validado sin hacer llamada a la API
-            // ya que parece haber problemas con la API (CORS y autenticación)
             
             // Validación básica del número
             if (cleanNumber.length < 6) {

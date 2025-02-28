@@ -35,10 +35,10 @@ const InviteTeamForm: React.FC<InviteTeamFormProps> = ({ onBack, onNext }) => {
         });
         onNext();
         
-        // For web platform, completely reload and navigate to root
+        // Web-specific solution
         if (Platform.OS === 'web') {
-            // This will cause a full page reload and navigation to root
-            window.location.href = '/';
+            // Force navigation to the specific route
+            window.location.pathname = '/';
         } else {
             router.replace("/");
         }
