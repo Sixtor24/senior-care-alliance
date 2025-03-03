@@ -2,6 +2,7 @@ import { Image, ScrollView, View } from "react-native";
 import ImagesPath from "../../assets/ImagesPath";
 import MultiStepForm from "@/components/SignUpForm";
 import { useState } from "react";
+import { ToastContainer } from "react-toastify";
 
 export default function Login() {
     const [activeStep, setActiveStep] = useState(1);
@@ -22,6 +23,7 @@ export default function Login() {
                             resizeMode="contain"
                         />
                         <MultiStepForm onStepChange={handleStepChange} />
+                        <ToastContainer />
                     </View>
                 </View>
             </ScrollView>

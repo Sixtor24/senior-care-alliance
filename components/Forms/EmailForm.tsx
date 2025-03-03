@@ -1,8 +1,10 @@
 import ImagesPath from "@/assets/ImagesPath";
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Image, Platform, ActivityIndicator } from "react-native";
-import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated'; 
+import { View, Text, TextInput, TouchableOpacity, Image, Platform, ActivityIndicator, Pressable } from "react-native";
+import Animated, { FadeInDown, FadeOut, FadeOutUp } from 'react-native-reanimated'; 
 import useFormStore from "../../store/formStore";
+import { toast, Bounce } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface RegistrationFormProps {
   onNext: (data: FormData) => void;
@@ -22,22 +24,25 @@ const SecondValidationEmailForm: React.FC<{
   const [isVerifying, setIsVerifying] = useState(false);
 
   const handleVerify = () => {
-    if (!inputValue.trim()) {
-      setError('Please enter the verification code');
+    
+    if (inputValue !== '916363') {
+      toast.error("Invalid verification code. Please try again!", {
+        position: "bottom-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: false,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Bounce,
+      });
       return;
     }
     
-    // Verificamos si el código es correcto (916363)
-    if (inputValue.trim() !== '916363') {
-      setError('Invalid verification code. Please try again.');
-      return;
-    }
-    
-    // Iniciamos el proceso de verificación
     setIsVerifying(true);
     setError(null);
     
-    // Esperamos 2 segundos antes de continuar
     setTimeout(() => {
       setIsVerifying(false);
       onNext();
@@ -91,7 +96,6 @@ const SecondValidationEmailForm: React.FC<{
           </View>
         </View>
       </View>
-      {error && <Text className="text-red-900 mt-2">{error}</Text>}
       <View className="py-2" />
       <Text className="text-left text-[15px] text-white font-light ">
         Not seeing the email in your inbox? <Text className="underline" onPress={() => {onBack()}}>Try sending again.</Text> 
@@ -120,7 +124,6 @@ const EmailForm: React.FC<RegistrationFormProps> = ({ onNext, formData }) => {
 
   const handleNextStep = () => {
     setIsExiting(true);
-    // Añadir pequeño retraso para permitir que la animación de salida se complete
     setTimeout(() => {
       onNext({ email });
     }, 300);
@@ -132,17 +135,67 @@ const EmailForm: React.FC<RegistrationFormProps> = ({ onNext, formData }) => {
   };
 
   const handleSubmit = async () => {
-    if (!validateEmailFormat(localEmail)) {
-      setError("Please enter a valid email address");
+    if (!localEmail.trim()) {
+      toast.error("Please enter your email address!", {
+        position: "bottom-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: false,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Bounce,
+      });
       return;
     }
 
-    setError(null);
-    const success = await validateEmail(localEmail);
-    if (success) {
+    if (!validateEmailFormat(localEmail)) {
+      toast.error("Please enter a valid email address!", {
+        position: "bottom-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: false,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Bounce,
+      });
+      return;
+    }
+
+    try {
+      const emailExists = await validateEmail(localEmail);
+      
+      if (emailExists) {
+        toast.error("This email is already registered!", {
+          position: "bottom-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: false,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "dark",
+          transition: Bounce,
+        });
+        return;
+      }
+      
       handleShowSecondForm();
-    } else {
-      setError("Failed to validate email. Please try again.");
+    } catch (err) {
+      toast.error("An error occurred. Please try again later!", {
+        position: "bottom-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: false,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Bounce,
+      });
     }
   };
 
@@ -195,12 +248,12 @@ const EmailForm: React.FC<RegistrationFormProps> = ({ onNext, formData }) => {
               </View>
             </View>
           </View>
-          {error && <Text className="text-red-900 mt-2">{error}</Text>}
         </Animated.View>
       ) : (
         <Animated.View 
           key={fadeKey} 
           entering={FadeInDown.delay(300)}
+          exiting={FadeOutUp}
           style={{ opacity: isExiting ? 0 : 1 }}
         >
           <SecondValidationEmailForm 

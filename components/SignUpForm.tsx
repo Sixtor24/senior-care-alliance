@@ -3,10 +3,9 @@ import { View } from "react-native";
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import QuestionsForm from "./Forms/QuestionsForm";
 import EmailForm from "./Forms/EmailForm";
-import VerificationForm from "./Forms/NumberForm";
 import useFormStore from "../store/formStore";
-import OrganizationLinkForm from "./Forms/OrganizationLinkForm";
 import InviteTeamForm from "./Forms/InviteTeamForm";
+import NumberForm from "./Forms/NumberForm";
 
 interface MultiStepFormProps {
     onStepChange: (newStep: number) => void;
@@ -36,7 +35,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ onStepChange }) => {
                 )}
                 {step === 2 && (
                     
-                        <VerificationForm
+                        <NumberForm
                             onBack={prevStep}
                             onNext={nextStep}
                         />
@@ -60,16 +59,10 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ onStepChange }) => {
                     </Animated.View>
                 )} */}
                 {step === 4 && (
-                    <Animated.View 
-                        entering={FadeInDown.duration(400).springify()}
-                        exiting={FadeOut.duration(300)}
-                        key="invite-team-form"
-                    >
                         <InviteTeamForm
                             onBack={prevStep}
                             onNext={nextStep}
                         />
-                    </Animated.View>
                 )}
             </View>
         </View>

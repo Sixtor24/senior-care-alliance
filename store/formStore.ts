@@ -96,25 +96,45 @@ const useFormStore = create<FormState>((set, get) => ({
         body: JSON.stringify({ email }),
       });
       
-      const data = await response.json();
-      
-      if (!response.ok) {
-        set({ 
-          error: 'This email is already registered. Please use a different email.',
-          loading: false 
-        });
-        return false;
+      // We only attempt to parse JSON if the response contains a body
+      let data = {};
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
       }
       
+      // Log response for debugging
+      console.log('API Response status:', response.status);
+      console.log('API Response data:', data);
+      
+      if (!response.ok) {
+        // If the error is that the email already exists
+        if (response.status === 400) {
+          set({ 
+            error: 'This email is already registered. Please use a different email.',
+            loading: false 
+          });
+          return true; // Email exists
+        } else {
+          // Server error or other issue
+          set({ 
+            error: 'An error occurred while validating your email. Please try again.',
+            loading: false 
+          });
+          return false; // Error occurred
+        }
+      }
+      
+      // Email is valid and doesn't exist in the system
       set({ email, loading: false });
-      return true;
+      return false; // Email doesn't exist
     } catch (err) {
+      console.error('Email validation error:', err);
       set({ 
         error: 'An error occurred while validating your email. Please try again.',
         loading: false 
       });
-      console.error('Email validation error:', err);
-      return false;
+      return false; // Error occurred
     }
   },
   

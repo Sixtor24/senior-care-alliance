@@ -4,6 +4,7 @@ import useFormStore from "../../store/formStore";
 import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { toast, Bounce } from 'react-toastify';
 
 interface InviteTeamFormProps {
     onBack: () => void;
@@ -11,7 +12,7 @@ interface InviteTeamFormProps {
     onError?: (message: string) => void;
 }
 
-const InviteTeamForm: React.FC<InviteTeamFormProps> = ({ onBack, onNext }) => {
+const InviteTeamForm: React.FC<InviteTeamFormProps> = ({ onBack, onNext, onError }) => {
     const { updateFormData } = useFormStore();
     const [teamEmails, setTeamEmails] = useState<string[]>([]);
     const [currentEmail, setCurrentEmail] = useState('');
@@ -19,23 +20,19 @@ const InviteTeamForm: React.FC<InviteTeamFormProps> = ({ onBack, onNext }) => {
     const [error, setError] = useState<string | null>(null);
 
     const handleNext = () => {
-        // Save current email if it exists and valid
-        let allEmails = [...teamEmails];
-        if (currentEmail.trim() !== '') {
-            allEmails.push(currentEmail.trim());
+        // If there's text in the input field, try to add it as an email chip first
+        if (currentEmail.trim()) {
+            addEmailChip(currentEmail);
+            setCurrentEmail('');
         }
         
-        // Filter out empty emails
-        const validEmails = allEmails.filter(email => email.trim() !== '');
+        // Validate emails before proceeding
+        if (teamEmails.length > 0 && !validateEmails()) {
+            return;
+        }
         
-        // Save even if there are no emails (they might not want to invite anyone yet)
-        updateFormData({ 
-            teamEmails: validEmails,
-            inviteMessage 
-        });
+        // Only proceed if validation passes or if there are no emails to validate
         onNext();
-        
-        // Web-specific solution
         if (Platform.OS === 'web') {
             // Force navigation to the specific route
             window.location.pathname = '/';
@@ -45,19 +42,56 @@ const InviteTeamForm: React.FC<InviteTeamFormProps> = ({ onBack, onNext }) => {
     };
 
     const addEmailChip = (email: string) => {
-        if (email.trim() !== '') {
-            setTeamEmails([...teamEmails, email.trim()]);
-            setCurrentEmail('');
-            if (error) setError(null);
+        email = email.trim();
+        
+        if (!email) return;
+        
+        if (!isValidEmail(email)) {
+            const errorMessage = `Invalid email format: ${email}`;
+            setError(errorMessage);
+            if (onError) onError(errorMessage);
+            
+            toast.warn(errorMessage, {
+                position: "bottom-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "dark",
+                transition: Bounce,
+            });
+            return;
         }
+        
+        if (teamEmails.includes(email)) {
+            const errorMessage = `Email already added: ${email}`;
+            setError(errorMessage);
+            if (onError) onError(errorMessage);
+            
+            toast.warn(errorMessage, {
+                position: "bottom-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "dark",
+                transition: Bounce,
+            });
+            return;
+        }
+        
+        setTeamEmails([...teamEmails, email]);
+        setError(''); // Clear any previous errors
     };
-
-    const handleKeyPress = (e: any) => {
-        // Check if spacebar was pressed
-        if (e.nativeEvent.key === ' ' && currentEmail.trim() !== '') {
-            e.preventDefault(); // Prevent the space from being added
-            addEmailChip(currentEmail);
-        }
+    
+    // Helper function to validate email format
+    const isValidEmail = (email: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
     };
 
     const removeEmail = (index: number) => {
@@ -71,11 +105,46 @@ const InviteTeamForm: React.FC<InviteTeamFormProps> = ({ onBack, onNext }) => {
         if (error) setError(null);
     };
 
+    const handleKeyPress = (e: any) => {
+        // If space or enter is pressed, add the email chip
+        if ((e.nativeEvent.key === ' ' || e.nativeEvent.key === 'Enter') && currentEmail.trim()) {
+            addEmailChip(currentEmail);
+            setCurrentEmail('');
+            e.preventDefault(); // Prevent the space from being added to the input
+        }
+    };
+
+    const validateEmails = () => {
+        // Check if there are any invalid emails
+        const invalidEmails = teamEmails.filter(email => !isValidEmail(email));
+        
+        if (invalidEmails.length > 0) {
+            const errorMessage = `Invalid email${invalidEmails.length > 1 ? 's' : ''}: ${invalidEmails.join(', ')}`;
+            setError(errorMessage);
+            if (onError) onError(errorMessage);
+            
+            toast.warn(errorMessage, {
+                position: "bottom-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "dark",
+                transition: Bounce,
+            });
+            return false;
+        }
+        
+        return true;
+    };
+
     return (
         <View className="w-[35vw]">
             <Animated.View 
                 key="inviteTeam"
-                entering={FadeInDown.duration(500).delay(100)} 
+                entering={FadeInDown.duration(500)} 
                 exiting={FadeOut.duration(300)}
                 className="w-full"
             >

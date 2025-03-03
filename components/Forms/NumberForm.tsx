@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Platform, ActivityIndicator, Modal, FlatList, Pressable } from "react-native";
-import Animated, { FadeOut, FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import useFormStore from "../../store/formStore";
-import DropDownPicker from "react-native-dropdown-picker";
+import { toast, Bounce } from 'react-toastify';
 
 // Lista predefinida de países con sus códigos e imágenes de banderas
 const COUNTRIES = [
@@ -27,7 +27,7 @@ interface NumberFormProps {
     onError?: (message: string) => void;
 }
 
-const NumberForm: React.FC<NumberFormProps> = ({ onBack, onNext }) => {
+const NumberForm: React.FC<NumberFormProps> = ({ onBack, onNext, onError }) => {
     const { error, loading, setPhoneNumber, setError } = useFormStore();
     const [phoneNumber, setPhoneNumberLocal] = useState("");
     const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
@@ -48,94 +48,140 @@ const NumberForm: React.FC<NumberFormProps> = ({ onBack, onNext }) => {
 
     const validatePhoneNumber = async () => {
         setIsLoading(true);
-        setError("");
+        const fullPhoneNumber = `${selectedCountry.callingCode}${phoneNumber.startsWith('0') ? phoneNumber.substring(1) : phoneNumber}`;
         
-        // Limpiamos el número de cualquier carácter no numérico
-        const cleanNumber = phoneNumber.replace(/\D/g, '');
+        const isUSorCA = selectedCountry.code === 'US' || selectedCountry.code === 'CA';
         
-        // Formateamos el número según el país
-        const fullPhoneNumber = `${selectedCountry.callingCode}${cleanNumber}`;
-        
-        console.log("Validating phone number:", fullPhoneNumber);
-        
-        try {
-            
-            // Validación básica del número
-            if (cleanNumber.length < 6) {
-                setError("El número de teléfono es demasiado corto");
-                setIsLoading(false);
-                return;
-            }
-            
-            // Validación específica para Venezuela
-            if (selectedCountry.code === 'VE') {
-                const validPrefixes = ['412', '414', '416', '424', '426'];
-                const prefix = cleanNumber.substring(0, 3);
-                
-                // Validamos que sea un prefijo de operador móvil válido en Venezuela
-                if (!validPrefixes.includes(prefix)) {
-                    setError("Prefijo de operador móvil no válido para Venezuela");
-                    setIsLoading(false);
-                    return;
-                }
-            }
-            
-            // Validación para EE.UU/Canadá
-            if (selectedCountry.callingCode === '+1' && cleanNumber.length !== 10) {
-                setError("Los números de EE.UU/Canadá deben tener 10 dígitos");
-                setIsLoading(false);
-                return;
-            }
-            
-            // En lugar de validar con la API, almacenamos directamente el número
-            console.log("Número validado localmente:", fullPhoneNumber);
-            setPhoneNumber(fullPhoneNumber);
-            onNext();
-            
-            /* Comentamos la llamada a la API debido a los errores
-            const response = await fetch('https://sca-api-535434239234.us-central1.run.app/organizations', {
-                method: 'POST',
-                headers: {
-                    'accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(postData)
+        // Basic validation
+        if (phoneNumber.trim().length === 0) {
+            toast.warn('Please enter your phone number', {
+                position: "bottom-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "dark",
+                transition: Bounce,
             });
-            */
-        } catch (error) {
-            console.error("Phone validation error:", error);
-            setError("Ocurrió un error al validar tu número de teléfono.");
-        } finally {
             setIsLoading(false);
+            return false;
         }
+        
+        // For countries other than US and Canada
+        if (!isUSorCA && phoneNumber.length < 5) {
+            toast.warn('The phone number is too short', {
+                position: "bottom-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "dark",
+                transition: Bounce,
+            });
+            setIsLoading(false);
+            return false;
+        }
+        
+        // For US and Canada
+        if (isUSorCA && phoneNumber.replace(/\D/g, '').length !== 10) {
+            toast.warn('The numbers of EE.UU/Canada must have 10 digits', {
+                position: "bottom-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "dark",
+                transition: Bounce,
+            });
+            setIsLoading(false);
+            return false;
+        }
+        
+        // En lugar de validar con la API, almacenamos directamente el número
+        console.log("Local validated number:", fullPhoneNumber);
+        setPhoneNumber(fullPhoneNumber);
+        
+        /* Comentamos la llamada a la API debido a los errores
+        const response = await fetch('https://sca-api-535434239234.us-central1.run.app/organizations', {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(postData)
+        });
+        */
+        return true;
     };
 
     const handleSubmit = async () => {
         if (!phoneNumber.trim()) {
-            setError("Please enter your phone number");
+            toast.warn('Please enter your phone number', {
+                position: "bottom-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "dark",
+                transition: Bounce,
+            });
             return;
         }
 
         try {
-            // Formatear el número de teléfono con el código de país
-            const formattedNumber = `${selectedCountry.callingCode}${phoneNumber.startsWith('0') ? phoneNumber.substring(1) : phoneNumber}`;
+            // Set loading state at the beginning
+            setIsLoading(true);
 
-            // Validación básica del número
+            // Basic validation
             if (phoneNumber.length < 5) {
-                setError("Invalid phone number");
+                toast.warn('Phone number is too short', {
+                    position: "bottom-center",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "dark",
+                    transition: Bounce,
+                });
+                setIsLoading(false);
                 return;
             }
 
-            // Primero guardar el número en el store
-            const success = await setPhoneNumber(formattedNumber);
-
-            // Si la validación fue exitosa, proceder con la navegación
-            if (success) {
-                // Navegación inmediata sin esperar a la animación
-                onNext();
+            // Call validatePhoneNumber for further validation
+            const isValid = await validatePhoneNumber();
+            
+            // If validation fails, reset loading state and return
+            if (!isValid) {
+                setIsLoading(false);
+                return;
             }
+
+            // Only proceed with the next step if validation passes
+            onNext();
         } catch (error) {
-            setError("Error validating phone number");
+            console.error('Error in handleSubmit:', error);
+            toast.error('An unexpected error occurred', {
+                position: "bottom-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "dark",
+                transition: Bounce,
+            });
+            setIsLoading(false);
         }
     };
 
@@ -179,7 +225,7 @@ const NumberForm: React.FC<NumberFormProps> = ({ onBack, onNext }) => {
                     ) : null}
                     <View className="flex-row justify-end p-3 w-full">
                         <Pressable
-                            onPress={validatePhoneNumber}
+                            onPress={handleSubmit}
                             disabled={loading || isLoading}
                             className="bg-white px-5 py-3 rounded-lg"
                             style={({ pressed }) => [

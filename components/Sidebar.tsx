@@ -35,8 +35,6 @@ const Sidebar = forwardRef<View, SidebarProps>(({
     loadConversation,
     onSelectThread
 }, ref) => {
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [conversationTitles, setConversationTitles] = useState<{[key: string]: string}>({});
     const [isLoading, setIsLoading] = useState(externalLoading);
