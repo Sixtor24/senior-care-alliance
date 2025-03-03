@@ -2,7 +2,13 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Platform, ActivityIndicator, Alert } from "react-native";
 import useFormStore from "../../store/formStore";
 import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
-import { API_URL } from "@/services/api";
+import Constants from 'expo-constants';
+
+const API_URL: string = Constants.expoConfig?.extra?.API_URL || '';
+
+if (!API_URL) {
+  throw new Error('API_URL is not defined');
+}
 
 interface QuestionsFormProps {
     onBack: () => void;

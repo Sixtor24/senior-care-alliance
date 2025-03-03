@@ -3,7 +3,13 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform } from 'r
 import { AntDesign, Feather, FontAwesome6 } from '@expo/vector-icons';
 import DashboardFacilityChat from './DashboardFacilityChat';
 import ImagesPath from '@/assets/ImagesPath';
-import { API_URL } from '@/services/api';
+import Constants from 'expo-constants';
+
+const API_URL: string = Constants.expoConfig?.extra?.API_URL || '';
+
+if (!API_URL) {
+  throw new Error('API_URL is not defined');
+}
 
 interface FacilityData {
     name: string;

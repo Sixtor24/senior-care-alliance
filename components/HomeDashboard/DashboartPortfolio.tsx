@@ -5,8 +5,13 @@ import SortIcon from '../ui/SortIcon';
 import { debounce } from 'lodash';
 import Modal from 'react-native-modal';
 import { ActiveView } from '../Sidebar';
+import Constants from 'expo-constants';
 
-import { API_URL } from '@/services/api';
+const API_URL: string = Constants.expoConfig?.extra?.API_URL || '';
+
+if (!API_URL) {
+  throw new Error('API_URL is not defined');
+}
 
 // Types that would match your API response
 interface Facility {

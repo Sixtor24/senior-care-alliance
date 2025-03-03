@@ -6,7 +6,13 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { DashboardChatProps, Message } from '@/types/chat';
 import AssistanceMessage from '../ui/AssistanceMessage';
 import axios from 'axios';
-import { API_URL } from '@/services/api';
+import Constants from 'expo-constants';
+
+const API_URL: string = Constants.expoConfig?.extra?.API_URL || '';
+
+if (!API_URL) {
+  throw new Error('API_URL is not defined');
+}
 
 const { height } = Dimensions.get('window');
 const maxHeight = height * 0.65;

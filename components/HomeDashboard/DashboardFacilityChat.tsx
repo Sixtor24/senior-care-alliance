@@ -2,8 +2,13 @@ import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Dimensions, ScrollView, Image, Platform, ActivityIndicator } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import ImagesPath from '@/assets/ImagesPath';
+import Constants from 'expo-constants';
 
-import { API_URL } from '@/services/api';
+const API_URL: string = Constants.expoConfig?.extra?.API_URL || '';
+
+if (!API_URL) {
+  throw new Error('API_URL is not defined');
+}
 
 const { height } = Dimensions.get('window');
 const maxHeight = height * 0.65;

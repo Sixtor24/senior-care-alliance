@@ -1,7 +1,12 @@
 import { ChatItem, ChatMessage, ChatResponse, Conversation, Message, SaveChatParams, ThreadHistoryResponse } from "@/types/chat";
 import axios from 'axios';
+import Constants from 'expo-constants';
 
-import { API_URL } from "./api";
+const API_URL: string = Constants.expoConfig?.extra?.API_URL || '';
+
+if (!API_URL) {
+  throw new Error('API_URL is not defined');
+}
 
 
 class ChatService {

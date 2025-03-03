@@ -4,12 +4,17 @@ import { MaterialIcons, Octicons, Feather } from '@expo/vector-icons';
 import { Conversation, SidebarProps } from '../types/chat';
 import LoadingSkeleton from './ui/LoadingSkeleton';
 import axios from 'axios';
+import Constants from 'expo-constants';
 
-import { API_URL } from '@/services/api';
+const API_URL: string = Constants.expoConfig?.extra?.API_URL || '';
+
+if (!API_URL) {
+  throw new Error('API_URL is not defined');
+}
+
+console.log('API_URL:', API_URL);
 
 export type ActiveView = 'chat' | 'portfolio' | 'facility';
-
-
 
 const ConversationSkeleton = () => (
     <View className="w-full flex-row justify-between items-center">
@@ -36,6 +41,8 @@ const Sidebar = forwardRef<View, SidebarProps>(({
     const [conversationTitles, setConversationTitles] = useState<{[key: string]: string}>({});
     const [isLoading, setIsLoading] = useState(externalLoading);
 
+    console.log('API URL:', `${API_URL}/conversations`);
+
     const loadConversations = async () => {
         try {
             setIsLoading(true);
@@ -58,6 +65,7 @@ const Sidebar = forwardRef<View, SidebarProps>(({
             setIsLoading(false);
         }
     };
+
 
     const loadTitlesForConversations = async (conversations: Conversation[]) => {
         const newTitles: {[key: string]: string} = {};
